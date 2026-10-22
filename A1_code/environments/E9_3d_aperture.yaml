@@ -1,0 +1,50 @@
+# Axis: compound 2D aperture (y AND z constrained simultaneously), not just
+# one axis like E4/E5/E6/E7 (whose walls span the full z range, so only y
+# is ever constrained). A solid wall with a single 2x2 window at y in
+# (24,26), z in (24,26) -- every drone must be inside this small window
+# in BOTH y and z at once to cross x=25, not just y.
+bounds:
+  x: [0, 50]
+  y: [0, 50]
+  z: [0, 50]
+
+initial_configuration:
+  - [2, 15, 25]
+  - [2, 20, 25]
+  - [2, 25, 25]
+  - [2, 30, 25]
+  - [2, 35, 25]
+
+obstacles:
+  - type: box   # left of the window (y<24), full z
+    position: [25, 12, 25]
+    size: [3, 24, 50]
+    rotation: [0, 0, 0]
+    color: red
+  - type: box   # right of the window (y>26), full z
+    position: [25, 38, 25]
+    size: [3, 24, 50]
+    rotation: [0, 0, 0]
+    color: red
+  - type: box   # below the window (y in the gap, z<24)
+    position: [25, 25, 12]
+    size: [3, 2, 24]
+    rotation: [0, 0, 0]
+    color: red
+  - type: box   # above the window (y in the gap, z>26)
+    position: [25, 25, 38]
+    size: [3, 2, 24]
+    rotation: [0, 0, 0]
+    color: red
+
+goals:
+  - position: [48, 15, 25]
+    radius: 1.2
+  - position: [48, 20, 25]
+    radius: 1.2
+  - position: [48, 25, 25]
+    radius: 1.2
+  - position: [48, 30, 25]
+    radius: 1.2
+  - position: [48, 35, 25]
+    radius: 1.2

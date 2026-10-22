@@ -1,0 +1,70 @@
+{
+  "config": "/Users/apple/github/8620/A2_code/environments/tiny_2d.yaml",
+  "seed": 0,
+  "variant": "full",
+  "action_mask": "full",
+  "success": true,
+  "termination": "success",
+  "steps": 1,
+  "total_reward": 99.0,
+  "discounted_return": 99.0,
+  "setup_seconds": 0.0038747969083487988,
+  "planning_seconds": 0.03753924497868866,
+  "mean_plan_seconds": 0.03753924497868866,
+  "max_plan_seconds": 0.03753924497868866,
+  "planning_budget": 0.04,
+  "num_drones": 1,
+  "num_actions": 8,
+  "obstacles": 0,
+  "simulations": 47,
+  "generative_calls": 87,
+  "mean_root_actions": 8.0,
+  "final_state": [
+    [
+      1,
+      1,
+      0,
+      1
+    ]
+  ],
+  "trajectory": [
+    {
+      "state": [
+        [
+          0,
+          0,
+          0,
+          0
+        ]
+      ],
+      "action": 7,
+      "reward": 99.0,
+      "next_state": [
+        [
+          1,
+          1,
+          0,
+          1
+        ]
+      ],
+      "done": true,
+      "info": {
+        "num_collisions": 0,
+        "num_vehicle_collisions": 0,
+        "success": true
+      }
+    }
+  ],
+  "searches": [
+    {
+      "elapsed": 0.037531718029640615,
+      "simulations": 47,
+      "generative_calls": 87,
+      "nodes": 21,
+      "root_actions": 8,
+      "root_visits": 47,
+      "action": 7,
+      "budget": 0.04
+    }
+  ]
+}

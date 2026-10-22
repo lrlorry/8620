@@ -1,0 +1,387 @@
+\input{tables/factorial_rows.tex}
+\input{tables/factor_effect_rows.tex}
+\input{tables/ablation_rows.tex}
+\input{tables/budget_rows.tex}
+\input{tables/regression_rows.tex}
+\section*{Part B: Multi-drone planning under uncertainty (35 points)}
+\begingroup
+\setlength{\parindent}{0pt}
+\setlength{\parskip}{4pt}
+
+\subsection*{Question 1: MDP formulation (3 points)}
+Let $\mathcal G=\{0,\ldots,n_x-1\}\times\{0,\ldots,n_y-1\}
+\times\{0,\ldots,n_z-1\}$, with obstacle cells $O\subset\mathcal G$.
+Drone $i$ has a known goal $g_i$. A simulator state contains its cell $p_i$
+and reached flag $r_i$; include elapsed time $t$ for the finite step limit:
+\[
+ s=\bigl((p_i,r_i)_{i=1}^{N},t\bigr),\qquad
+ s_0=\bigl((p_i^0,\mathbf1\{p_i^0=g_i\})_{i=1}^{N},0\bigr).
+\]
+The positions and reached flags are observed. A reached drone remains at its
+goal and continues to occupy that cell. Success, collision and the step limit
+terminate the episode; the planner assigns zero continuation value after
+termination.
+
+For altitude-changing flight, each intended move is
+\[
+ u_i\in\{-1,0,1\}^3\setminus\{(0,0,0)\},\qquad
+ \mathcal A=\{0,\ldots,26^N-1\}.
+\]
+The supplied encoding is little-endian:
+$a=\sum_{i=1}^{N}a_i B^{i-1}$, where $B=26$, or $B=8$ for fixed altitude.
+There is no selectable hover action. Reached drones ignore their commands.
+
+The known transition model samples each drone's raw target independently,
+conditional on the joint state and intended actions, then checks joint
+collisions. Writing $q_i$ for the supplied per-drone target distribution and
+$F$ for its target-to-state/termination mapping,
+\[
+ T(s,a,s')=\sum_{y:F(s,y)=s'}\prod_{i=1}^{N}q_i(y_i\mid p_i,r_i,a_i).
+\]
+For an unreached drone, the intended direction has weight
+$d/(d+\alpha)$ and every other physical direction has weight
+$(1-d/(d+\alpha))/(B-1)$, where $d$ is the supplied distance-field value.
+Out-of-grid directions receive zero weight and the remaining weights are
+renormalised. Obstacle targets are not removed: hitting one ends the mission.
+The code retains that drone's previous cell in the returned terminal state.
+Two drones in the same returned cell also cause termination. Cell swaps and
+diagonal segment crossings are allowed by the stated cell-occupancy model.
+
+Use the provided transition reward, rather than an additional reward shaping
+term. For step cost $c$, collision penalty $C$ and goal reward $G$,
+\[
+ R_{\mathrm{sample}}=Nc+C(C_{\mathrm{obs}}+C_{\mathrm{veh}})
+       +G\sum_i\mathbf1\{r_i=0,\ r_i'=1\}.
+\]
+Here $C_{\mathrm{obs}}$ counts obstacle hits, and $C_{\mathrm{veh}}$ counts
+all drones in shared-cell groups. The objective is
+\[
+ \max_\pi\ \mathbb E_\pi\!\left[\sum_{t=0}^{\tau-1}\gamma^tR_t\right],
+ \qquad \tau=\min\{T_{\mathrm{success}},T_{\mathrm{collision}},H\}.
+\]
+Negative step costs favour fast completion; collision penalties discourage
+failure. This expected-return objective does not guarantee zero collision
+probability under stochastic motion.
+
+\clearpage
+\subsection*{Question 2: Approximate online solver (4 points)}
+I use the lectures' generative-model UCT/MCTS, with guided action widening
+for the exponentially large joint action set~\cite{mdp-lectures}.
+Unlike A1's RRT-Connect, it evaluates stochastic outcomes and replans after
+every observed transition. Full value/policy iteration enumerates too many
+joint states; exact RTDP backups also require action and successor sums.
+MCTS directly uses the supplied generative interface. Belief-space solvers
+are unnecessary for this fully observed problem, while model-free RL would
+require a separate training and generalisation study~\cite{tutorials,rl-lectures}.
+
+The four components are specified as follows.
+\begin{enumerate}[label=(\arabic*),itemsep=3pt]
+\item \textbf{Selection.} Choose an unvisited admitted action first; otherwise
+      maximise
+      \[
+       Q(s,a)+0.35\sqrt{\frac{\log(N(s)+1)}{N(s,a)}}.
+      \]
+      Returns and heuristic values are divided by
+      $\kappa=\max\{1,N(|G|+2|C|)\}$ so the exploration constant has a
+      comparable scale across drone counts.
+\item \textbf{Expansion.} Admit at most
+      $\min\{|\mathcal A_{\mathrm{eff}}(s)|,
+      \lceil1.5\sqrt{N(s)+1}\rceil\}$ actions. The first proposal is guided;
+      later proposals use a uniform joint command with probability $0.15$,
+      otherwise a randomised guided command. Duplicate proposals are retried
+      at most 12 times. Commands of already reached drones are canonically
+      encoded as zero. Each distinct sampled successor has its own child;
+      stochastic outcomes are never replaced by the most likely outcome.
+\item \textbf{Rollout.} At the first new successor, simulate up to eight
+      steps: a uniform joint command with probability $0.10$, otherwise the
+      deterministic guided command. The tree depth is capped at eight.
+      Terminal continuation is zero; other cutoffs use the heuristic below.
+\item \textbf{Backup.} With $z=R/\kappa+\gamma v$, update the sampled
+      state--action edge by the incremental mean~\cite{tutorials}:
+      \[
+       N(s,a)\gets N(s,a)+1,\qquad
+       Q(s,a)\gets Q(s,a)+\frac{z-Q(s,a)}{N(s,a)}.
+      \]
+      Increment $N(s)$ and repeat. Return the root action with most visits,
+      breaking ties by $Q$; use the guided fallback if no simulation finishes.
+\end{enumerate}
+
+\textbf{Guidance and leaf estimate.}
+For each goal, breadth-first search computes static free-cell distances
+$d_i(p)$ using the physical eight/26 neighbours. This deterministic
+relaxation ignores other drones and slips. Intended-action scores are
+\[
+ d_i(p_i+u_i)+0.025\|p_i+u_i-g_i\|_1
+      +\frac{0.3}{\max\{1,d_{\mathrm{clear}}(p_i+u_i)\}}.
+\]
+Out-of-grid/obstacle targets receive cost $10^6$; unreachable targets use
+distance cost $10^4$. Goal-occupied and already reserved target cells receive
+an additional $10^5$. Process active drones in index order for the fallback
+and in random order for stochastic proposals. The randomised proposal
+samples among the best four commands within $1.05$ of the minimum, with
+weights $\exp[-3(\mathrm{score}-\mathrm{score}_{\min})]$.
+These preferences guide search; the simulator still determines all actual
+collisions and rewards.
+
+\begin{minipage}{\linewidth}
+\setlength{\parskip}{4pt}
+With $h$ steps remaining, let $D=\min\{h,\max_{i:r_i=0}d_i(p_i)\}$,
+using $D=h$ if an active goal is statically unreachable. The leaf estimate is
+\[
+ \widehat V(s,h)=Nc\sum_{j=0}^{D-1}\gamma^j
+       +G\!\sum_{\substack{i:r_i=0\\1\le d_i(p_i)\le h}}
+                     \gamma^{d_i(p_i)-1}.
+\]
+It is zero after success or when $h=0$. This estimate approximates team
+completion and one-time goal rewards; it omits future collision risk and
+is not an exact value function. Maps are built once and their setup time is
+reported separately. Above 150,000 grid cells the implementation uses a
+Chebyshev-distance fallback and omits the clearance term to bound
+preprocessing memory.
+\end{minipage}
+
+\begin{lstlisting}[style=pseudocode,caption={Budgeted UCT with sampled outcomes}]
+PROCEDURE PLAN(s, budget)
+    deadline <- NOW + max(0, 0.97 * min(budget, 10) - 0.002)
+    fallback <- GUIDED(s); root <- empty node
+    h <- H - number of previously executed decisions
+    WHILE before deadline AND trials < 2000 AND h > 0:
+        IF all drones reached: BREAK
+        SEARCH(root, s, h, 0)
+    RETURN most-visited root action (tie: greatest Q), or fallback
+
+PROCEDURE SEARCH(node, s, h, depth)
+    IF h = 0 OR all drones reached: RETURN 0
+    IF depth >= 8: RETURN ROLLOUT(s, h)
+    admit a new proposed action if widening permits
+    a <- unvisited action, otherwise UCB-maximising action
+    (s_next, r, done) <- SIMULATE(s, a) // check deadline first
+    IF done: v <- 0
+    ELSE IF this outcome child is new:
+        create child; v <- ROLLOUT(s_next, h - 1)
+    ELSE:
+        v <- SEARCH(child, s_next, h - 1, depth + 1)
+    z <- r / kappa + gamma * v
+    increment edge visits; update Q by incremental mean
+    increment node visits; RETURN z
+
+PROCEDURE ROLLOUT(s, h)
+    simulate up to min(8, h) epsilon-greedy guided steps
+    check deadline before each simulator call
+    stop immediately on success or collision
+    tail <- 0 if terminal, otherwise Vhat(s, remaining) / kappa
+    RETURN discounted sampled rewards plus discounted tail
+\end{lstlisting}
+Interrupted incomplete tree trials are discarded. The remaining horizon is
+decremented in both tree search and rollout because the supplied
+\texttt{simulate} does not enforce the execution step limit.
+
+\clearpage
+\subsection*{Question 3: Implementation and demonstration (8 points)}
+The submission entry point is \texttt{run\_u8076655.py};
+\texttt{planner.py} implements B2. The supplied simulator is vendored at
+revision \texttt{ea3cbfe}, recorded with hashes in \texttt{UPSTREAM.json}.
+Only Vedo imports are deferred to visualisation methods; a subclass disables
+the plotting hooks for headless runs. AST comparison verifies that the
+constructor, reset, action encoding, dynamics, rewards and execution methods
+are unchanged. The original checkout is preserved.
+
+The planner accesses only \texttt{get\_config()}, \texttt{simulate()}, and
+the action-count interface, using its actual property form and also accepting
+a callable form~\cite{provided-code}. Static heuristic maps are derived from
+the public configuration. It never inspects a future random outcome or
+changes an execution state during planning. Independent simulator instances
+use seeds $s$ for execution and $1{,}000{,}003+s$ for planning; the proposal
+RNG uses $2{,}000{,}003+s$. Tutorial Week~8's sampling-quality concern is
+addressed with NumPy generators, while Week~9's incremental averaging is used
+in the backups~\cite{tutorials}.
+
+\begin{lstlisting}[style=terminal]
+# From the extracted submission's top-level folder:
+python run_u8076655.py --config environments/demo_open_2d.yaml
+python run_u8076655.py --config environments/demo_four_3d.yaml
+# The marker's YAML requires no source edits:
+python run_u8076655.py --config <scenario.yaml>
+# Optional diagnostics / viewer:
+python run_u8076655.py --config <scenario.yaml> --seed 3 \
+  --planning-time 0.5 --output results/trajectory.json
+python run_u8076655.py --config <scenario.yaml> --visualize
+# Correctness tests, benchmarks and analysis:
+python -m unittest discover -s tests -v
+python scripts/run_all_experiments.py
+python scripts/analyse_results.py
+\end{lstlisting}
+NumPy, SciPy and PyYAML are sufficient for headless execution; Matplotlib
+generates figures. Vedo/VTK is optional for the viewer. There is no training
+checkpoint or external data dependency. The default per-decision allowance
+is 9.5 seconds, with at most 2,000 trials. Python search is serial and the
+runner sets numerical-library thread limits to one.
+
+The demo cases cover one fixed-altitude drone ($8$ actions) through four
+altitude-changing drones and five obstacle cells ($26^4=456{,}976$ joint
+actions). The latter is a stress case beyond the stated $<50$-action expected
+test. Widening avoids constructing the full joint action list.
+\input{tables/validation_summary.tex}
+
+\clearpage
+\subsection*{Question 4: Experimental investigation (20 points)}
+
+\subsubsection*{Design and controls}
+The main study is a balanced $3\times3\times3$ factorial design with two
+drones. Starts $(0,1,1),(0,3,1)$, goals $(11,1,1),(11,3,1)$, $\alpha=0.25$,
+$c=-1$, $C=-100$, $G=100$, $\gamma=0.98$, and $H=60$ are fixed.
+Each of the 27 conditions uses seeds 0--19 and a 0.04-second planning
+allowance per decision: 540 episodes.
+
+\begin{table}[H]
+\centering\small
+\begin{tabularx}{\linewidth}{@{}lXX@{}}
+\toprule
+Factor & Levels & What the comparison measures \\
+\midrule
+State size & Grid $(12,n_y,3)$, $n_y=5,10,20$ &
+Expand the free region while retaining the task and obstacle coordinates. \\
+Action size & 6, 18, 26 intended directions per drone; $|A|=36,324,676$ &
+Axial, axial-plus-edge, or all neighbour commands, on the same physical model. \\
+Clutter & 0, 2, 5 nested obstacle cells &
+Introduce obstacles near the common start--goal routes. \\
+\bottomrule
+\end{tabularx}
+\end{table}
+For $F=36n_y-|O|$ free cells, $F^2$ is a positional state-count upper
+bound, rather than an enumerated reachable-state count. The clock multiplier
+is constant across conditions. Action masks restrict intended commands only:
+each retained command calls the same original 26-direction transition
+model, including its slip outcomes. This preserves retained transition
+kernels; changing the simulator's altitude flag would not.
+
+The state comparison tests whether global state count affects a focused
+online search or mainly its map setup. Action widening is expected to limit
+the cost of many joint commands, though added commands may improve recovery.
+Clutter can increase detours and collisions; because the supplied noise
+depends on obstacle distance, geometry and motion uncertainty change
+together. Expanding the grid also changes distant boundaries, and action
+masks change control capability. Thus these experiments estimate effects over
+the specified problem families, not isolated universal scaling laws.
+
+Four representative tasks additionally test the full solver, uniform
+proposals/rollouts, zero leaf values, removal of widening, and guided control without
+search (20 seeds per cell; 400 episodes). A budget study uses 0.02, 0.1 and
+0.5 seconds on three tasks (10 seeds; 90 episodes). Eighteen regression
+scenarios (20 seeds) and sixteen generated random layouts (10 seeds) cover
+1--4 drones, 2D/3D movement, goals already occupied, narrow passages,
+boundaries, strong wind, infeasibility and timeouts. Together the recorded
+studies contain 1,550 executed episodes; they are not an exhaustive set of
+all possible environments.
+
+\subsubsection*{Metrics and confidence intervals}
+Success requires all goals reached without collision within the step limit.
+To prevent early collision from appearing fast, define penalised completion
+length
+\[
+ L=\begin{cases}\tau,&\text{success},\\H,&\text{failure}.\end{cases}
+\]
+Report $L$, discounted return, success counts, map/setup time, planning time,
+simulation calls and admitted root actions. Failures remain in the means.
+For episode-level continuous metrics, use the two-sided Student-$t$ interval
+\[
+ \bar x\ \pm\ t_{0.975,n-1}\frac{s_x}{\sqrt n}.
+\]
+These mean intervals are approximate for mixed success/failure distributions.
+Success proportions have Wilson 95\% intervals in \texttt{summary.csv}.
+For factorial marginal means, first average the nine conditions within each
+seed block, then form a $t$ interval across 20 blocks. High-minus-low factor
+effects and ablation effects use paired seed-block differences. This retains
+the dependence introduced by reusing seeds across conditions.
+\input{tables/experiment_environment.tex}
+
+\subsubsection*{Measured results}
+\begin{figure}[H]
+\centering
+\includegraphics[width=\linewidth]{figures/complexity_effects.pdf}
+\caption{Factorial marginal means of penalised completion length. Error bars
+are 95\% confidence intervals over 20 seed-block means.}
+\end{figure}
+
+\begin{table}[H]
+\centering\small
+\caption{High-minus-low factor effects on $L$, averaged over the other
+factors within each seed. Positive values indicate degradation.}
+\begin{tabular}{@{}lrr@{}}
+\toprule Factor & Mean change in $L$ & 95\% interval \\
+\midrule
+\FactorEffectRows
+\bottomrule
+\end{tabular}
+\end{table}
+\input{partB_results_discussion.tex}
+
+\begin{table}[H]
+\centering\small
+\caption{All 27 factorial conditions, $n=20$ each. Continuous metrics show
+mean $\pm$ 95\% Student-$t$ CI half-width. Planning time is the episode's
+mean decision time, in milliseconds.}
+\begin{tabular}{@{}rrrcrrr@{}}
+\toprule $n_y$ & $|A|$ & $|O|$ & Success & $L$ & Return & Plan (ms) \\
+\midrule
+\FactorialRows
+\bottomrule
+\end{tabular}
+\end{table}
+
+\subsubsection*{Solver components}
+\begin{table}[H]
+\centering\footnotesize
+\caption{Component comparisons, $n=20$ per cell. Each entry gives success
+count followed by mean $L\pm$95\% CI half-width; $H=80$.}
+\begin{tabular}{@{}lrrrr@{}}
+\toprule Variant & Open 2D & Four 3D & Swap 2D & Narrow \\
+\midrule
+\AblationRows
+\bottomrule
+\end{tabular}
+\end{table}
+\begin{figure}[H]
+\centering
+\includegraphics[width=0.95\linewidth]{figures/ablation_effects.pdf}
+\caption{Paired changes in $L$ relative to the full solver, averaged across
+four tasks within each seed. Error bars are 95\% intervals across 20 seeds.}
+\end{figure}
+\input{partB_component_discussion.tex}
+
+\clearpage
+\subsubsection*{Planning budget}
+\begin{table}[H]
+\centering\small
+\caption{Budget sensitivity, $n=10$ per condition. $L$ and return show mean
+$\pm$95\% CI half-width. Max time is the largest measured decision time.}
+\begin{tabular}{@{}lrrrrr@{}}
+\toprule Task & Budget (s) & Success & $L$ & Return & Max time (s) \\
+\midrule
+\BudgetRows
+\bottomrule
+\end{tabular}
+\end{table}
+\input{partB_budget_discussion.tex}
+
+\subsubsection*{Reproducibility and limits}
+All scenarios, generators, raw CSVs, per-suite metadata, seed-0 trajectories,
+summary CSV/JSON files and figure scripts are included in the source archive.
+\texttt{course\_inventory.json} records the local course-material inventory;
+\texttt{model\_verification.json} records the upstream-core comparison.
+Wall-clock stopping means a seed alone need not reproduce an identical
+search tree on a different run or machine. A fixed trial cap under a generous
+time limit is used for the deterministic reproducibility test.
+
+The tested noise range and finite scenario set do not establish performance
+on every unseen layout. Sparse stochastic outcome trees, heuristic distance
+errors, occupied goals and narrow passages remain important limitations.
+Nonzero slip probability can make collision risk unavoidable; the supplied
+finite penalty is not a hard safety constraint. More computation may reduce
+estimation error, but does not guarantee a better individual outcome or an
+optimal policy. Reported factor rankings apply only to the tested levels and
+fixed reward/budget settings.
+Conditions ran serially in fixed order on one machine; timing comparisons
+also remain subject to machine load and thermal drift.
+\par
+\endgroup

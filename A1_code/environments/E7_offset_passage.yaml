@@ -1,0 +1,54 @@
+# Axis: passage offset / dogleg (tutorial-w3 Q1 right-hand panel -- an
+# offset arrangement of narrow passages instead of one straight-through
+# gap). Two walls in sequence: wall 1 (x=17) has its 2-unit gap centered at
+# y=25; wall 2 (x=33) has its 2-unit gap centered at y=15. Every drone
+# must funnel to y~25 to cross wall 1, then shift laterally to y~15 to
+# cross wall 2, before it can spread back out to its own goal -- an S-curve
+# through two narrow slots rather than a single bottleneck.
+bounds:
+  x: [0, 50]
+  y: [0, 50]
+  z: [0, 50]
+
+initial_configuration:
+  - [2, 15, 25]
+  - [2, 20, 25]
+  - [2, 25, 25]
+  - [2, 30, 25]
+  - [2, 35, 25]
+
+obstacles:
+  # Wall 1 at x=17, gap at y in (24, 26)
+  - type: box
+    position: [17, 12, 25]
+    size: [2, 24, 50]
+    rotation: [0, 0, 0]
+    color: red
+  - type: box
+    position: [17, 38, 25]
+    size: [2, 24, 50]
+    rotation: [0, 0, 0]
+    color: red
+  # Wall 2 at x=33, gap at y in (14, 16)
+  - type: box
+    position: [33, 7, 25]
+    size: [2, 14, 50]
+    rotation: [0, 0, 0]
+    color: red
+  - type: box
+    position: [33, 33, 25]
+    size: [2, 34, 50]
+    rotation: [0, 0, 0]
+    color: red
+
+goals:
+  - position: [48, 15, 25]
+    radius: 1.2
+  - position: [48, 20, 25]
+    radius: 1.2
+  - position: [48, 25, 25]
+    radius: 1.2
+  - position: [48, 30, 25]
+    radius: 1.2
+  - position: [48, 35, 25]
+    radius: 1.2

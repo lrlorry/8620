@@ -1,0 +1,38 @@
+# Axis: passage width (moderate). Only 2 obstacles (low count!) forming a
+# wall with a 14-unit gap at y in (18, 32), which the 5 drones (spread over
+# y in [15, 35]) must funnel through together.
+bounds:
+  x: [0, 50]
+  y: [0, 50]
+  z: [0, 50]
+
+initial_configuration:
+  - [2, 15, 25]
+  - [2, 20, 25]
+  - [2, 25, 25]
+  - [2, 30, 25]
+  - [2, 35, 25]
+
+obstacles:
+  - type: box
+    position: [25, 9, 25]
+    size: [3, 18, 50]
+    rotation: [0, 0, 0]
+    color: red
+  - type: box
+    position: [25, 41, 25]
+    size: [3, 18, 50]
+    rotation: [0, 0, 0]
+    color: red
+
+goals:
+  - position: [48, 15, 25]
+    radius: 1.2
+  - position: [48, 20, 25]
+    radius: 1.2
+  - position: [48, 25, 25]
+    radius: 1.2
+  - position: [48, 30, 25]
+    radius: 1.2
+  - position: [48, 35, 25]
+    radius: 1.2

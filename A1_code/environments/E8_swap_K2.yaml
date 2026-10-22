@@ -1,0 +1,16 @@
+# Axis: drone-drone coordination (no static obstacles). 2 drones start on a single line at x=25 and must fully reverse order along y -- drone i's goal is drone (K+1-i)'s start. This isolates centralised
+# multi-drone coordination difficulty from obstacle avoidance, and
+# gives a K-indexed series for the B5 scalability discussion.
+bounds:
+  x: [0, 50]
+  y: [0, 50]
+  z: [0, 50]
+initial_configuration:
+- [25, 15, 25]
+- [25, 35, 25]
+obstacles: []
+goals:
+- position: [25, 35, 25]
+  radius: 1.2
+- position: [25, 15, 25]
+  radius: 1.2

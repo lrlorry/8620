@@ -1,0 +1,26 @@
+Replacing guided proposals and rollouts by uniform actions, while retaining
+the leaf estimate, increases $L$ by $39.3\pm4.9$ steps across the four-task
+seed blocks. On Four~3D and Narrow, success falls to $0/20$, compared with
+$17/20$ and $16/20$ for the full variant. Domain-informed action selection
+and rollout are therefore the strongest supported components in this study.
+
+The other comparisons do not establish an improvement from the full
+configuration. Removing leaf values changes $L$ by $-3.2\pm4.7$;
+removing widening gives $-2.7\pm4.6$; guided control without search gives
+$-2.2\pm4.9$. All three intervals include zero. The negative point estimates
+favour simpler variants, but the data do not resolve their differences.
+Widening controls storage and exploration allocation; the short budget already
+limits growth. The leaf estimate ignores coupled occupancy and future slip
+risk, so it can also bias finite-budget decisions. These results support
+guidance, while leaving the benefit of these additional approximations
+unconfirmed at 40\,ms. The full configuration was specified before this
+comparison and is not claimed to be the best variant in every task.
+
+For the four MCTS stages, selection scans only admitted actions, while
+expansion stores sampled outcomes rather than a full joint transition table.
+As stochasticity spreads probability across more successors, repeated visits
+to a particular child can become scarce; rollout quality then matters more.
+Incremental mean backup uses constant extra storage per edge instead of
+storing all previous returns, but rare collision penalties can still make
+finite-sample values noisy. These describe computational mechanisms; UCB
+selection and the mean-backup rule were not separately ablated.

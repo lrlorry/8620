@@ -1,0 +1,36 @@
+# Axis: goal-region correctness. No path-blocking obstacles; a small
+# sphere (radius 0.5) sits exactly at drone 3's goal centre. Required
+# drone-obstacle clearance is 0.5+0.3=0.8, less than the goal radius 1.2,
+# so the goal CENTRE is invalid but a free shell (distance 0.8-1.2 from
+# centre) still exists inside the goal ball. This exercises the fallback
+# branch of VALID-GOAL-SAMPLE (sample inside the goal ball), which E0-E10
+# never actually trigger since their goal centres are always free.
+bounds:
+  x: [0, 50]
+  y: [0, 50]
+  z: [0, 50]
+
+initial_configuration:
+  - [2, 15, 25]
+  - [2, 20, 25]
+  - [2, 25, 25]
+  - [2, 30, 25]
+  - [2, 35, 25]
+
+obstacles:
+  - type: sphere
+    position: [48, 25, 25]
+    radius: 0.5
+    color: red
+
+goals:
+  - position: [48, 15, 25]
+    radius: 1.2
+  - position: [48, 20, 25]
+    radius: 1.2
+  - position: [48, 25, 25]
+    radius: 1.2
+  - position: [48, 30, 25]
+    radius: 1.2
+  - position: [48, 35, 25]
+    radius: 1.2

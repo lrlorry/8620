@@ -1,0 +1,40 @@
+# Axis: obstacle avoidance + drone-drone coordination together. Same
+# 2-unit severe bottleneck wall as E5, but goals are the fully reversed
+# order (like E8's swap), so all 5 drones must cross paths with each
+# other WHILE ALSO funnelling through the same narrow gap -- the most
+# representative hard case for centralised multi-drone planning.
+bounds:
+  x: [0, 50]
+  y: [0, 50]
+  z: [0, 50]
+
+initial_configuration:
+  - [2, 15, 25]
+  - [2, 20, 25]
+  - [2, 25, 25]
+  - [2, 30, 25]
+  - [2, 35, 25]
+
+obstacles:
+  - type: box
+    position: [25, 12, 25]
+    size: [3, 24, 50]
+    rotation: [0, 0, 0]
+    color: red
+  - type: box
+    position: [25, 38, 25]
+    size: [3, 24, 50]
+    rotation: [0, 0, 0]
+    color: red
+
+goals:
+  - position: [48, 35, 25]
+    radius: 1.2
+  - position: [48, 30, 25]
+    radius: 1.2
+  - position: [48, 25, 25]
+    radius: 1.2
+  - position: [48, 20, 25]
+    radius: 1.2
+  - position: [48, 15, 25]
+    radius: 1.2

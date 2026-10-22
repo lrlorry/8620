@@ -1,0 +1,44 @@
+# Axis: obstacle count (high). 14 full-height cylinders in a staggered
+# "forest". Individual gaps stay generous (~4.6 clearance) -- stresses raw
+# obstacle *count* while deliberately NOT creating one narrow passage.
+# Contrast with E4/E5, which hold obstacle count low but shrink passage
+# width instead.
+bounds:
+  x: [0, 50]
+  y: [0, 50]
+  z: [0, 50]
+
+initial_configuration:
+  - [2, 15, 25]
+  - [2, 20, 25]
+  - [2, 25, 25]
+  - [2, 30, 25]
+  - [2, 35, 25]
+
+obstacles:
+  - {type: cylinder, endpoints: [[15, 13, 0], [15, 13, 50]], radius: 1.5, color: red}
+  - {type: cylinder, endpoints: [[15, 19, 0], [15, 19, 50]], radius: 1.5, color: red}
+  - {type: cylinder, endpoints: [[15, 25, 0], [15, 25, 50]], radius: 1.5, color: red}
+  - {type: cylinder, endpoints: [[15, 31, 0], [15, 31, 50]], radius: 1.5, color: red}
+  - {type: cylinder, endpoints: [[15, 37, 0], [15, 37, 50]], radius: 1.5, color: red}
+  - {type: cylinder, endpoints: [[22, 16, 0], [22, 16, 50]], radius: 1.5, color: red}
+  - {type: cylinder, endpoints: [[22, 22, 0], [22, 22, 50]], radius: 1.5, color: red}
+  - {type: cylinder, endpoints: [[22, 28, 0], [22, 28, 50]], radius: 1.5, color: red}
+  - {type: cylinder, endpoints: [[22, 34, 0], [22, 34, 50]], radius: 1.5, color: red}
+  - {type: cylinder, endpoints: [[29, 13, 0], [29, 13, 50]], radius: 1.5, color: red}
+  - {type: cylinder, endpoints: [[29, 19, 0], [29, 19, 50]], radius: 1.5, color: red}
+  - {type: cylinder, endpoints: [[29, 25, 0], [29, 25, 50]], radius: 1.5, color: red}
+  - {type: cylinder, endpoints: [[29, 31, 0], [29, 31, 50]], radius: 1.5, color: red}
+  - {type: cylinder, endpoints: [[29, 37, 0], [29, 37, 50]], radius: 1.5, color: red}
+
+goals:
+  - position: [48, 15, 25]
+    radius: 1.2
+  - position: [48, 20, 25]
+    radius: 1.2
+  - position: [48, 25, 25]
+    radius: 1.2
+  - position: [48, 30, 25]
+    radius: 1.2
+  - position: [48, 35, 25]
+    radius: 1.2

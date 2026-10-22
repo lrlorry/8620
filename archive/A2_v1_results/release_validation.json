@@ -1,0 +1,60 @@
+{
+  "default_demos": {
+    "demo_open_2d": {
+      "config": "/Users/apple/github/8620/A2_code/environments/demo_open_2d.yaml",
+      "seed": 0,
+      "variant": "full",
+      "action_mask": "full",
+      "success": true,
+      "termination": "success",
+      "steps": 14,
+      "total_reward": 86.0,
+      "discounted_return": 64.58433599975548,
+      "setup_seconds": 0.0056182119296863675,
+      "planning_seconds": 68.55099265731405,
+      "mean_plan_seconds": 4.8964994755224325,
+      "max_plan_seconds": 6.525899365078658,
+      "planning_budget": 9.5,
+      "num_drones": 1,
+      "num_actions": 8,
+      "obstacles": 0,
+      "simulations": 28000,
+      "generative_calls": 226562,
+      "mean_root_actions": 8.0
+    },
+    "demo_four_3d": {
+      "config": "/Users/apple/github/8620/A2_code/environments/demo_four_3d.yaml",
+      "seed": 0,
+      "variant": "full",
+      "action_mask": "full",
+      "success": true,
+      "termination": "success",
+      "steps": 13,
+      "total_reward": 348.0,
+      "discounted_return": 275.7638466779897,
+      "setup_seconds": 0.069818644085899,
+      "planning_seconds": 75.44970234087668,
+      "mean_plan_seconds": 5.803823256990514,
+      "max_plan_seconds": 7.82862062798813,
+      "planning_budget": 9.5,
+      "num_drones": 4,
+      "num_actions": 456976,
+      "obstacles": 5,
+      "simulations": 26000,
+      "generative_calls": 186148,
+      "mean_root_actions": 64.76923076923077
+    }
+  },
+  "forced_10s_check": {
+    "elapsed": 9.698335141059943,
+    "simulations": 2412,
+    "generative_calls": 23641,
+    "nodes": 2381,
+    "root_actions": 74,
+    "root_visits": 2412,
+    "action": 315011,
+    "budget": 10.0,
+    "measured_elapsed": 9.69885097106453
+  },
+  "unit_tests": 25
+}

@@ -1,0 +1,15 @@
+For Four~3D, observed success rises from $7/10$ at 0.02\,s to $9/10$ at
+0.5\,s, and mean $L$ falls from 33.1 to 19.3. The intervals are broad with
+ten seeds, so this is a trend rather than a precise improvement estimate.
+Open~2D succeeds in every run at all three budgets; Swap~2D also succeeds
+throughout and has unchanged mean $L=5.4$. Additional planning is consequently
+more relevant to the harder joint task, but does not uniformly shorten the
+observed paths.
+
+The table reports actual decision times rather than assuming that a clock
+check enforces the nominal allowance exactly. Some short calls overrun their
+small allowance (the largest 0.1-second call is 0.143\,s); simulator calls,
+Python cleanup and scheduling occur between cooperative checks. Every
+decision in these 1,550 episodes remains below 0.496\,s. The separate
+default-budget and forced-deadline checks in B3 test the assignment's
+10-second limit directly.

@@ -1,0 +1,59 @@
+# Axis: obstacle count (medium). 7 obstacles, moderate clearance.
+bounds:
+  x: [0, 50]
+  y: [0, 50]
+  z: [0, 50]
+
+initial_configuration:
+  - [2, 15, 25]
+  - [2, 20, 25]
+  - [2, 25, 25]
+  - [2, 30, 25]
+  - [2, 35, 25]
+
+obstacles:
+  - type: sphere
+    position: [15, 25, 25]
+    radius: 3.0
+    color: red
+  - type: box
+    position: [22, 15, 15]
+    size: [4, 4, 15]
+    rotation: [0, 0, 0]
+    color: red
+  - type: box
+    position: [22, 35, 35]
+    size: [4, 4, 15]
+    rotation: [0, 0, 0]
+    color: red
+  - type: cylinder
+    endpoints: [[28, 20, 0], [28, 20, 50]]
+    radius: 2.5
+    rotation: [0, 0, 0]
+    color: red
+  - type: cylinder
+    endpoints: [[28, 30, 0], [28, 30, 50]]
+    radius: 2.5
+    rotation: [0, 0, 0]
+    color: red
+  - type: sphere
+    position: [35, 25, 15]
+    radius: 3.0
+    color: red
+  - type: box
+    position: [38, 25, 35]
+    size: [5, 5, 5]
+    rotation: [0, 0, 0]
+    color: red
+
+goals:
+  - position: [48, 15, 25]
+    radius: 1.2
+  - position: [48, 20, 25]
+    radius: 1.2
+  - position: [48, 25, 25]
+    radius: 1.2
+  - position: [48, 30, 25]
+    radius: 1.2
+  - position: [48, 35, 25]
+    radius: 1.2

@@ -1,0 +1,32 @@
+grid_size:
+- 10
+- 10
+- 5
+start_positions:
+- - 0
+  - 9
+  - 3
+- - 0
+  - 3
+  - 1
+- - 0
+  - 4
+  - 2
+goal_positions:
+- - 9
+  - 5
+  - 3
+- - 9
+  - 2
+  - 4
+- - 9
+  - 0
+  - 3
+obstacle_cells: []
+change_altitude: true
+step_cost: -1.0
+collision_penalty: -100.0
+goal_reward: 100.0
+discount_factor: 0.98
+max_num_steps: 60
+alpha: 0.5

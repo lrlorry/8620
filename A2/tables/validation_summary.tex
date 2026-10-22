@@ -1,0 +1,22 @@
+The 25 unit tests pass. A separate exhaustive check of the free
+$2\times2\times1$ two-drone model covers 11 admissible nonterminal
+joint states, 704 state--action pairs and all
+6,048 positive-probability outcomes. This is exhaustive only
+for that small model. The named demo cases complete in the following
+single seed-0 checks using the default 9.5-second allowance.
+
+\begin{table}[H]
+\centering\small
+\begin{tabular}{@{}lrlrr@{}}
+\toprule
+Task & Seed & Status & Steps & Max decision (s) \\
+\midrule
+Open 2D & 0 & success & 14 & 6.526 \\
+Four 3D, five obstacles & 0 & success & 13 & 7.829 \\
+\bottomrule
+\end{tabular}
+\end{table}
+A forced 10-second call, with the trial cap raised to 100,000, returns
+in 9.699 seconds. These measured checks
+support the timing claim on this machine; they are not a hard real-time
+guarantee or evidence of success on every unseen layout.

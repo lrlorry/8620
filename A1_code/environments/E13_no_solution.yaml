@@ -1,0 +1,62 @@
+# Axis: termination correctness on a provably unsolvable instance. All 5
+# drones are sealed inside a fully closed 6-box shell around their initial
+# cluster -- no path to any goal exists. Directly tests the "one-sided"
+# property noted in week3 (a sampler that finds nothing can't tell whether
+# there's no solution or it just hasn't found one yet): the correct
+# behaviour is a clean FAILURE within the 20s budget, not a hang, crash,
+# or (worse) a returned path that is not actually collision-free.
+bounds:
+  x: [0, 50]
+  y: [0, 50]
+  z: [0, 50]
+
+initial_configuration:
+  - [2, 15, 25]
+  - [2, 20, 25]
+  - [2, 25, 25]
+  - [2, 30, 25]
+  - [2, 35, 25]
+
+obstacles:
+  - type: box   # -X face
+    position: [-1.5, 25, 25]
+    size: [1, 28, 8]
+    rotation: [0, 0, 0]
+    color: red
+  - type: box   # +X face
+    position: [5.5, 25, 25]
+    size: [1, 28, 8]
+    rotation: [0, 0, 0]
+    color: red
+  - type: box   # -Y face
+    position: [2, 11.5, 25]
+    size: [6, 1, 8]
+    rotation: [0, 0, 0]
+    color: red
+  - type: box   # +Y face
+    position: [2, 38.5, 25]
+    size: [6, 1, 8]
+    rotation: [0, 0, 0]
+    color: red
+  - type: box   # -Z face
+    position: [2, 25, 21.5]
+    size: [6, 26, 1]
+    rotation: [0, 0, 0]
+    color: red
+  - type: box   # +Z face
+    position: [2, 25, 28.5]
+    size: [6, 26, 1]
+    rotation: [0, 0, 0]
+    color: red
+
+goals:
+  - position: [48, 15, 25]
+    radius: 1.2
+  - position: [48, 20, 25]
+    radius: 1.2
+  - position: [48, 25, 25]
+    radius: 1.2
+  - position: [48, 30, 25]
+    radius: 1.2
+  - position: [48, 35, 25]
+    radius: 1.2

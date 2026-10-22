@@ -1,0 +1,71 @@
+{
+  "config": "/Users/apple/github/8620/A2_code/environments/horizon_one.yaml",
+  "seed": 0,
+  "variant": "full",
+  "action_mask": "full",
+  "success": false,
+  "termination": "timeout",
+  "steps": 1,
+  "total_reward": -1.0,
+  "discounted_return": -1.0,
+  "setup_seconds": 0.004575175931677222,
+  "planning_seconds": 0.03687818790785968,
+  "mean_plan_seconds": 0.03687818790785968,
+  "max_plan_seconds": 0.03687818790785968,
+  "planning_budget": 0.04,
+  "num_drones": 1,
+  "num_actions": 8,
+  "obstacles": 0,
+  "simulations": 101,
+  "generative_calls": 101,
+  "mean_root_actions": 8.0,
+  "final_state": [
+    [
+      1,
+      2,
+      0,
+      0
+    ]
+  ],
+  "trajectory": [
+    {
+      "state": [
+        [
+          0,
+          2,
+          0,
+          0
+        ]
+      ],
+      "action": 6,
+      "reward": -1.0,
+      "next_state": [
+        [
+          1,
+          2,
+          0,
+          0
+        ]
+      ],
+      "done": true,
+      "info": {
+        "num_collisions": 0,
+        "num_vehicle_collisions": 0,
+        "success": false,
+        "max_steps_reached": true
+      }
+    }
+  ],
+  "searches": [
+    {
+      "elapsed": 0.03686953498981893,
+      "simulations": 101,
+      "generative_calls": 101,
+      "nodes": 25,
+      "root_actions": 8,
+      "root_visits": 101,
+      "action": 6,
+      "budget": 0.04
+    }
+  ]
+}

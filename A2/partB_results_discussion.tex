@@ -1,0 +1,27 @@
+\textbf{Clutter is the clearest degrading factor in this design.}
+Increasing obstacles from 0 to 5 raises $L$ by $9.5\pm3.0$ steps; its
+95\% interval $[6.4,12.5]$ excludes zero. Its effect exceeds the state-size
+effect by 11.5 steps (95\% CI $[7.1,15.9]$) and the action-size effect by
+19.7 steps (95\% CI $[15.9,23.5]$). This is evidence for a ranking within
+these tested levels, not a claim that obstacle count always dominates every
+other source of difficulty. Obstacles affect both routes and the supplied
+distance-dependent noise.
+
+\textbf{State count alone does not explain online difficulty.}
+Increasing $n_y$ from 5 to 20 changes $L$ by $-2.0\pm2.3$ steps,
+with interval $[-4.4,0.3]$. There is no clear degradation. Mean setup time
+increases from 18.1 to 63.2\,ms because goal-distance maps cover more cells,
+but search does not enumerate the $F^2$ joint configurations. The wider
+workspace also offers more recovery space, so this comparison cannot isolate
+an abstract state-count effect from all geometric changes.
+
+\textbf{More available actions improve these tasks.}
+Increasing the joint intended-action count from 36 to 676 changes $L$ by
+$-10.2\pm2.2$ steps, with interval $[-12.5,-8.0]$. Diagonal commands can
+combine forward progress with recovery from lateral/vertical slips, and
+the heuristic's deterministic relaxation is closer to the richer action set.
+These are plausible explanations, rather than separately identified causes.
+The mean number of admitted root actions grows only from 5.8 to 6.4;
+widening prevents the coded action count from translating directly into full
+enumeration. The experiment therefore measures the net effect of additional
+control choices and search cost, not a pure branching-factor penalty.

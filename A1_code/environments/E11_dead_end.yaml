@@ -1,0 +1,48 @@
+# Axis: dead-end / local trap (classic "bug trap" test for greedy
+# planners). A U-shaped ("⊐") wall opens toward the start side (x<15) and
+# is closed on the goal side (back wall at x=29-31), spanning the full y
+# range the drones occupy (10-40). Moving straight from start toward goal
+# leads into the cup and dead-ends at the back wall; the only way through
+# is to first move AWAY from the goal (back out the mouth) and detour via
+# y>41 or y<9 around the outside of the cup. Tests whether the planner is
+# sensitive to a local trap rather than a low-measure passage.
+bounds:
+  x: [0, 50]
+  y: [0, 50]
+  z: [0, 50]
+
+initial_configuration:
+  - [2, 15, 25]
+  - [2, 20, 25]
+  - [2, 25, 25]
+  - [2, 30, 25]
+  - [2, 35, 25]
+
+obstacles:
+  - type: box   # back wall of the cup (closed end, faces the goal)
+    position: [30, 25, 25]
+    size: [2, 30, 50]
+    rotation: [0, 0, 0]
+    color: red
+  - type: box   # top wall of the cup
+    position: [23, 40, 25]
+    size: [16, 2, 50]
+    rotation: [0, 0, 0]
+    color: red
+  - type: box   # bottom wall of the cup
+    position: [23, 10, 25]
+    size: [16, 2, 50]
+    rotation: [0, 0, 0]
+    color: red
+
+goals:
+  - position: [48, 15, 25]
+    radius: 1.2
+  - position: [48, 20, 25]
+    radius: 1.2
+  - position: [48, 25, 25]
+    radius: 1.2
+  - position: [48, 30, 25]
+    radius: 1.2
+  - position: [48, 35, 25]
+    radius: 1.2

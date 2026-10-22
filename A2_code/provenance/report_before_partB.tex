@@ -1,0 +1,597 @@
+\documentclass[11pt,a4paper]{article}
+
+% -----------------------------------------------------------------------------
+% Document setup
+% -----------------------------------------------------------------------------
+\usepackage[T1]{fontenc}
+\usepackage[utf8]{inputenc}
+\usepackage{lmodern}
+\usepackage{microtype}
+\usepackage[a4paper,margin=25mm,headheight=14pt]{geometry}
+
+\usepackage{amsmath,amssymb,mathtools}
+\usepackage{booktabs}
+\usepackage{tabularx}
+\usepackage{array}
+\usepackage{graphicx}
+\usepackage{float}
+\usepackage{caption}
+\usepackage{subcaption}
+\usepackage{xcolor}
+\usepackage{enumitem}
+\usepackage{listings}
+\usepackage{fancyhdr}
+\usepackage[hidelinks]{hyperref}
+
+% -----------------------------------------------------------------------------
+% Student and assignment details: edit these fields first.
+% -----------------------------------------------------------------------------
+\newcommand{\studentname}{Rui Luo}
+\newcommand{\studentuid}{u8076655}
+\newcommand{\coursecode}{COMP8620}
+\newcommand{\coursetitle}{Advanced Topics in AI: Intelligent Robotics}
+\newcommand{\assignmenttitle}{Assignment 2}
+\newcommand{\semester}{Semester 2, 2026}
+
+% -----------------------------------------------------------------------------
+% Styling helpers
+% -----------------------------------------------------------------------------
+\definecolor{anuBlue}{HTML}{1F4E79}
+\definecolor{codeBackground}{HTML}{F5F7F9}
+\definecolor{codeBorder}{HTML}{D7DCE2}
+\definecolor{placeholderGray}{HTML}{606770}
+
+\hypersetup{
+  pdftitle={\coursecode\ \assignmenttitle},
+  pdfauthor={\studentname\ (\studentuid)},
+  colorlinks=true,
+  linkcolor=anuBlue,
+  citecolor=anuBlue,
+  urlcolor=anuBlue
+}
+
+\pagestyle{fancy}
+\fancyhf{}
+\lhead{\coursecode\ -- \assignmenttitle}
+\rhead{\studentuid}
+\cfoot{\thepage}
+
+\setcounter{secnumdepth}{3}
+\setcounter{tocdepth}{2}
+\setlist[itemize]{leftmargin=*,itemsep=2pt,topsep=4pt}
+\setlist[enumerate]{leftmargin=*,itemsep=2pt,topsep=4pt}
+\captionsetup{font=small,labelfont=bf}
+
+\newcommand{\placeholder}[1]{%
+  \par\smallskip
+  \noindent\textcolor{placeholderGray}{\textit{[Replace this placeholder: #1]}}
+  \par\smallskip
+}
+
+\newcommand{\finalresult}[1]{%
+  \begin{equation}
+    \boxed{#1}
+  \end{equation}
+}
+
+\newcommand{\figureplaceholder}[1]{%
+  \begin{center}
+    \fcolorbox{codeBorder}{codeBackground}{%
+      \parbox[c][45mm][c]{0.86\linewidth}{\centering
+        \textcolor{placeholderGray}{\textit{#1}}}}
+  \end{center}
+}
+
+\lstdefinestyle{python}{
+  language=Python,
+  basicstyle=\ttfamily\small,
+  backgroundcolor=\color{codeBackground},
+  frame=single,
+  rulecolor=\color{codeBorder},
+  numbers=left,
+  numberstyle=\scriptsize\color{placeholderGray},
+  breaklines=true,
+  showstringspaces=false,
+  columns=fullflexible,
+  keywordstyle=\color{anuBlue}\bfseries,
+  commentstyle=\color{placeholderGray}
+}
+
+\lstdefinestyle{terminal}{
+  basicstyle=\ttfamily\small,
+  backgroundcolor=\color{codeBackground},
+  frame=single,
+  rulecolor=\color{codeBorder},
+  breaklines=true,
+  showstringspaces=false,
+  columns=fullflexible
+}
+
+\lstdefinestyle{pseudocode}{
+  basicstyle=\ttfamily\small,
+  backgroundcolor=\color{codeBackground},
+  frame=single,
+  rulecolor=\color{codeBorder},
+  numbers=left,
+  numberstyle=\scriptsize\color{placeholderGray},
+  breaklines=true,
+  showstringspaces=false,
+  columns=fullflexible,
+  keywordstyle=\color{anuBlue}\bfseries,
+  commentstyle=\color{placeholderGray}\itshape,
+  morecomment=[l]{//},
+  morekeywords={PROCEDURE,INPUT,OUTPUT,REQUIRE,ENSURE,IF,ELSE,WHILE,FOR,RETURN,FAILURE}
+}
+
+\lstdefinestyle{prompt}{
+  basicstyle=\ttfamily\small,
+  backgroundcolor=\color{codeBackground},
+  frame=single,
+  rulecolor=\color{codeBorder},
+  breaklines=true,
+  showstringspaces=false,
+  columns=fullflexible
+}
+
+\begin{document}
+\pagenumbering{gobble}
+
+% -----------------------------------------------------------------------------
+% Title page (same layout as A1)
+% -----------------------------------------------------------------------------
+\begin{titlepage}
+  \centering
+  \vspace*{30mm}
+  {\Large\coursecode\par}
+  \vspace{4mm}
+  {\Large\coursetitle\par}
+  \vspace{16mm}
+  {\huge\bfseries\assignmenttitle\ Report\par}
+  \vspace{5mm}
+  {\large\semester\par}
+  \vfill
+  \begin{tabular}{@{}ll@{}}
+    \toprule
+    Student & \studentname \\
+    UID & \studentuid \\
+    \bottomrule
+  \end{tabular}
+  \vfill
+  {\large The Australian National University\par}
+  \vspace{10mm}
+\end{titlepage}
+\pagenumbering{arabic}
+
+% Replace every placeholder before submission. Prompts must be recorded verbatim.
+\section*{Generative AI Disclosure}
+\label{sec:ai-disclosure}
+OpenAI Codex was used to prepare the initial LaTeX report template, using the
+Assignment 1 report structure and the Assignment 2 specification.
+It was also used to review and revise the answers to Part A, Questions 1--3.
+It also generated the alpha-vector upper-envelope figure.
+\placeholder{Complete the disclosure with every additional AI tool used, its
+purpose, and the parts of the report or code it assisted with. Describe only
+work actually performed. Record all prompts verbatim in \texttt{AI\_prompts.txt}, as described in
+Appendix A, including follow-up prompts.}
+
+% =============================================================================
+% Part A: 30 points
+% =============================================================================
+\section*{Part A: Theory (30 points)}
+
+\subsection*{Question 1: Two-state MDP abstraction (10 points)}
+\label{sec:a1}
+\begingroup
+\setlength{\parindent}{0pt}
+\setlength{\parskip}{4pt}
+\noindent\textbf{No.}
+
+Let $m=\lceil k/2\rceil$, and define
+\[
+\phi(s)=
+\begin{cases}
+L, & 1\le s\le m,\\
+R, & m+1\le s\le k.
+\end{cases}
+\]
+
+An exact MDP abstraction requires a transition function depending only
+on the abstract state and action while preserving the original motion
+probabilities. In particular, for every action $a$, transition consistency requires
+\[
+\phi(s_1)=\phi(s_2)
+\implies
+\sum_{u:\,\phi(u)=R}T(s_1,a,u)
+=
+\sum_{u:\,\phi(u)=R}T(s_2,a,u).
+\]
+
+For $k>4$, consider $s_1=m-1$ and $s_2=m$, both in $L$.
+Under $a=\mathrm{moveRight}$,
+\[
+\begin{aligned}
+m-1&\xrightarrow{\,0.7\,}m\in L,
+&\qquad m-1&\xrightarrow{\,0.3\,}m-2\in L,\\
+m&\xrightarrow{\,0.7\,}m+1\in R,
+&\qquad m&\xrightarrow{\,0.3\,}m-1\in L.
+\end{aligned}
+\]
+Hence,
+\[
+\begin{aligned}
+P(R\mid s_1,a)
+&=\sum_{u=m+1}^{k}T(m-1,a,u)=0,\\
+P(R\mid s_2,a)
+&=\sum_{u=m+1}^{k}T(m,a,u)
+=T(m,a,m+1)=0.7.
+\end{aligned}
+\]
+
+Since $0\neq0.7$, transition consistency fails:
+no single $T'(L,\mathrm{moveRight},R)$ can represent both states exactly.
+
+Therefore, the proposed abstraction cannot preserve the original motion
+uncertainty and is not an exact MDP abstraction.
+\par
+\endgroup
+
+\clearpage
+\subsection*{Question 2: Alpha-vector dominance (10 points)}
+\label{sec:a2}
+\begingroup
+\setlength{\parindent}{0pt}
+\setlength{\parskip}{4pt}
+
+Let $p=b(s_1)$. Since $b(s_1)+b(s_2)=1$,
+\[
+b=(p,1-p),\qquad 0\le p\le1.
+\]
+For each $\alpha_i\in\Gamma$, let $V_i(p)=\alpha_i\cdot b$. Then
+\[
+\begin{aligned}
+V_1(p)&=10p-5(1-p)=15p-5,\\
+V_2(p)&=-5p+10(1-p)=10-15p,\\
+V_3(p)&=4p+4(1-p)=4,\\
+V_4(p)&=p+2(1-p)=2-p,\\
+V_5(p)&=5.5p+(1-p)=1+4.5p.
+\end{aligned}
+\]
+
+\subsubsection*{(a) Maximal belief intervals (4 points)}
+
+The upper envelope is
+\[
+V(p)=\max_{\alpha_i\in\Gamma}V_i(p).
+\]
+
+\begin{figure}[H]
+  \centering
+  \includegraphics[width=0.96\linewidth]{figures/alpha_envelope.pdf}
+\end{figure}
+
+The relevant intersections are
+\[
+\begin{aligned}
+V_2(p)=V_3(p)
+&\iff 10-15p=4
+\iff p=\frac25,\\
+V_1(p)=V_3(p)
+&\iff 15p-5=4
+\iff p=\frac35.
+\end{aligned}
+\]
+
+\begin{samepage}
+The remaining vectors are never maximal, since
+\[
+V_4(p)=2-p<4=V_3(p),\qquad 0\le p\le1,
+\]
+and, using $V_1(p)-V_5(p)=10.5p-6$,
+\[
+\begin{cases}
+V_5(p)\le1+4.5\times\frac35=3.7<4=V_3(p),
+    & 0\le p\le\frac35,\\[2pt]
+V_1(p)-V_5(p)\ge10.5\times\frac35-6=0.3>0,
+    & \frac35\le p\le1.
+\end{cases}
+\]
+\end{samepage}
+
+Since $V_2$ decreases, $V_1$ increases, and $V_3=4$,
+\[
+V(p)=
+\begin{cases}
+10-15p, & 0\le p<\frac25,\\
+4,      & \frac25\le p\le\frac35,\\
+15p-5,  & \frac35<p\le1.
+\end{cases}
+\]
+Therefore, the maximal belief intervals are
+\[
+\boxed{
+\begin{aligned}
+\alpha_1 &: \left[\frac35,1\right],\\
+\alpha_2 &: \left[0,\frac25\right],\\
+\alpha_3 &: \left[\frac25,\frac35\right],\\
+\alpha_4,\alpha_5 &: \varnothing.
+\end{aligned}
+}
+\]
+At $p=\frac25$, $\alpha_2$ and $\alpha_3$ tie;
+at $p=\frac35$, $\alpha_1$ and $\alpha_3$ tie.
+
+\subsubsection*{(b) Pointwise dominance (6 points)}
+
+An $\alpha$-vector can be removed if, at every belief,
+another vector has strictly greater value:
+\[
+\forall b\in B,\quad
+\exists\alpha'\in\Gamma:
+\alpha\cdot b<\alpha'\cdot b.
+\]
+
+For $\alpha_4$,
+\[
+V_4(p)=2-p<4=V_3(p),\qquad \forall p\in[0,1].
+\]
+Thus, $\alpha_4$ is strictly dominated by $\alpha_3$.
+
+For $\alpha_5$, the dominating vector may depend on $p$.
+From part (a),
+\[
+\begin{cases}
+V_5(p)<V_3(p), & 0\le p\le\frac35,\\
+V_5(p)<V_1(p), & \frac35<p\le1.
+\end{cases}
+\]
+These intervals cover $[0,1]$, so $\alpha_5$ also satisfies
+the removal condition.
+
+The remaining vectors $\alpha_2$, $\alpha_3$, and $\alpha_1$ are uniquely
+maximal at $p=0$, $p=\frac12$, and $p=1$, respectively.
+Hence, none satisfies the removal condition.
+
+Therefore,
+\[
+\boxed{
+\Gamma_{\mathrm{remove}}=\{\alpha_4,\alpha_5\},
+\qquad
+\Gamma_{\mathrm{keep}}=\{\alpha_1,\alpha_2,\alpha_3\}.
+}
+\]
+\par
+\endgroup
+
+\clearpage
+\subsection*{Question 3: MDP versus POMDP for pedestrian avoidance (10 points)}
+\label{sec:a3}
+\begingroup
+\setlength{\parindent}{0pt}
+\setlength{\parskip}{4pt}
+
+Let $c_t,v_t$ be the car's position and speed, and $p_t^i$ the position
+of pedestrian $i$. Define
+\[
+x_t=(c_t,v_t,p_t^1,\ldots,p_t^n).
+\]
+Positions are observed accurately, and the car measures its own speed.
+It chooses an action $a_t$ (accelerate, maintain speed, or brake)
+to reach $G$ while avoiding collisions.
+
+\subsubsection*{(a) Scenario suitable for an MDP}
+
+Suppose pedestrians follow known stochastic movement rules: the probabilities
+of crossing or continuing along the sidewalk depend only on the current
+observable configuration, with no persistent hidden intention.
+These memoryless dynamics give
+\[
+P(x_{t+1}\mid x_{0:t},a_{0:t})
+=P(x_{t+1}\mid x_t,a_t).
+\]
+Thus, $x_t$ is Markov and fully observed, so an MDP with state
+$s_t=x_t$ is suitable despite the stochastic pedestrian motion.
+
+\subsubsection*{(b) Scenario suitable for a POMDP}
+
+Now suppose each pedestrian has a persistent but unobservable destination
+$g_i$, such as crossing the road or continuing along the sidewalk.
+Let $\mathbf g=(g_1,\ldots,g_n)$, and assume motion is Markov conditional
+on these destinations. The complete state and observation are
+\[
+s_t=(x_t,\mathbf g),\qquad o_t=x_t.
+\]
+At the same observed configuration, two possible joint destinations
+can yield different motion distributions:
+\[
+P(x_{t+1}\mid x_t,a_t,\mathbf g^{(1)})
+\neq
+P(x_{t+1}\mid x_t,a_t,\mathbf g^{(2)}).
+\]
+Different motion histories can produce the same $x_t$ but different
+beliefs about $\mathbf g$. Hence, $x_t$ alone need not be Markov.
+The car maintains
+\[
+b_t(\mathbf g)=P(\mathbf g\mid x_{0:t},a_{0:t-1})
+\]
+and predicts motion using
+\[
+P(x_{t+1}\mid x_t,b_t,a_t)
+=\sum_{\mathbf g}
+P(x_{t+1}\mid x_t,a_t,\mathbf g)\,b_t(\mathbf g).
+\]
+The belief is updated as new movements are observed. A POMDP is suitable
+because it uses both the observed configuration and the belief over hidden
+destinations to select driving actions.
+\par
+\endgroup
+
+\clearpage
+% =============================================================================
+% Part B: 35 points
+% =============================================================================
+\section*{Part B: Multi-drone Planning under Uncertainty (35 points)}
+
+\subsection*{Question 1: MDP formulation (3 points)}
+\label{sec:b1}
+\placeholder{Define the MDP tuple and the objective. Keep all modelling
+choices consistent with the solver, implementation, and experiments below.}
+\begin{description}[leftmargin=1em,style=nextline]
+  \item[State space $\mathcal{S}$ and initial state.]
+    \placeholder{Specify the joint state of all drones in the
+    $n_x\times n_y\times n_z$ grid, obstacles, goals, and terminal states.}
+  \item[Action space $\mathcal{A}$.]
+    \placeholder{Define each drone's moves to the 26 neighbouring cells and
+    the centralised joint action. Explain any action restrictions and how
+    grid boundaries and goal occupancy are handled.}
+  \item[Transition function $T$.]
+    \placeholder{Explain how the provided $T_{\mathrm{known}}$ determines
+    joint transition probabilities. State any assumptions about dependence
+    between drone outcomes, and define collision and termination handling.}
+  \item[Reward, termination, and objective.]
+    \placeholder{Specify step costs, collision costs, goal rewards, stopping
+    conditions, and any discount or horizon. Explain how the objective
+    captures fast arrival and collision avoidance.}
+\end{description}
+
+\subsection*{Question 2: Approximate online MDP solver (4 points)}
+\label{sec:b2}
+\subsubsection*{Algorithm and design choices}
+\placeholder{Name the specific solver and explain its approximations,
+planning budget, and action selection. If using MCTS, specify the exact
+selection, expansion, simulation/rollout, and backup methods, together with
+how stochastic outcomes are handled. Describe any heuristics and parameters.}
+
+\subsubsection*{Pseudocode}
+\placeholder{Insert complete pseudocode for the actual solver, including
+inputs, outputs, budget checks, termination, and the returned action. Use the
+pseudocode listing style if useful. The implementation
+in B3 must implement this pseudocode.}
+
+\subsection*{Question 3: Python implementation and demo (8 points)}
+\label{sec:b3}
+\subsubsection*{Implementation and provided primitives}
+\placeholder{Identify the Python entry point, solver files, and interfaces
+used from the supplied MultiDroneUnc code. Map the implementation to B1 and
+B2. Include the repository revision and actual dependencies used.}
+
+\noindent Provided code:
+\url{https://github.com/RDLLab/MultiDroneUnc}.
+
+\subsubsection*{Running the submitted code}
+\placeholder{Provide the exact commands, working directory, scenario paths,
+seed options, and dependencies needed to run the program from the extracted
+archive. Use \texttt{lstlisting} with \texttt{style=terminal} for commands.}
+
+\subsubsection*{Planning budget and demo readiness}
+\placeholder{Explain and measure enforcement of the maximum 10-second
+planning budget per step with no parallelisation. Describe support for the
+demo range: one drone at fixed altitude in an open environment through up to
+four drones with altitude changes and up to five obstacles in a cluttered
+environment. The expected test case has fewer than 50 discrete actions;
+state precisely how the implementation counts actions.}
+
+\subsection*{Question 4: Experimental investigation (20 points)}
+\label{sec:b4}
+\subsubsection*{Research questions and controlled scenario sets}
+\placeholder{Design systematic experiments to determine which factor degrades
+performance most: state-space size, action-space size, or clutter. Explain
+what each scenario set tests and what you expect to learn. State how the
+factors are measured, which variables are held fixed, and any unavoidable
+confounding.}
+
+\begin{table}[htbp]
+  \centering
+  \caption{Experimental design. Replace TODO entries with actual settings.}
+  \label{tab:experiment-design}
+  \small
+  \begin{tabularx}{\linewidth}{@{}lXXX@{}}
+    \toprule
+    Scenario set & Factor varied & Levels / definition & Controls \\
+    \midrule
+    S & State-space size & TODO & TODO \\
+    A & Action-space size & TODO & TODO \\
+    C & Environment clutter & TODO & TODO \\
+    \bottomrule
+  \end{tabularx}
+\end{table}
+
+\subsubsection*{Protocol, metrics, and uncertainty}
+\placeholder{Specify actual scenarios, repetitions per scenario, random
+seeds, hardware, planning budget, horizon/timeout, and success/failure
+criteria. Define the metrics used, for example success rate, collisions,
+steps to goal, return, and planning time. Explain how failed or timed-out
+runs enter each statistic and identify the sampling unit for each interval.}
+
+\placeholder{Report at least the mean and 95\% confidence interval for each
+scenario. State the interval method and its assumptions, and use an
+appropriate method for each metric. If reporting steps conditional on
+success, also report success counts so failures are visible.}
+
+\subsubsection*{Results}
+\placeholder{Replace the example rows with measured results for every tested
+scenario and metric. Do not enter illustrative numbers as experimental data.
+Add plots with labelled axes, units, and confidence intervals where useful.}
+
+\begin{table}[htbp]
+  \centering
+  \caption{Measured performance by scenario; TODO entries require real data.}
+  \label{tab:results}
+  \small
+  \begin{tabularx}{\linewidth}{@{}llcXXX@{}}
+    \toprule
+    Set & Scenario & Runs & Metric (unit) & Mean & 95\% CI \\
+    \midrule
+    S & TODO & TODO & TODO & TODO & TODO \\
+    A & TODO & TODO & TODO & TODO & TODO \\
+    C & TODO & TODO & TODO & TODO & TODO \\
+    \bottomrule
+  \end{tabularx}
+\end{table}
+
+% To include a real plot, uncomment and replace its path:
+% \begin{figure}[htbp]
+%   \centering
+%   \includegraphics[width=0.9\linewidth]{figures/complexity_results.pdf}
+%   \caption{Measured performance versus the chosen complexity factor.
+%     State the metric, number of runs, and confidence interval method.}
+%   \label{fig:complexity-results}
+% \end{figure}
+
+\subsubsection*{Effect of each complexity factor}
+\placeholder{Explain how state-space size, action-space size, and clutter
+each affect performance. Refer to the measured tables and figures, compare
+factors on a justified basis, and identify which degrades performance most
+within the tested range. Discuss uncertainty and limitations.}
+
+\subsubsection*{Effect of solver components}
+\placeholder{Explain how each component of the proposed solver affects
+performance as complexity increases. Support the discussion with the
+observed behaviour and, where practical, controlled component comparisons.
+Clearly distinguish measured findings from hypotheses.}
+
+\subsubsection*{Reproducibility and limitations}
+\placeholder{Identify the submitted scenario files, configurations, seeds,
+raw results, and analysis scripts that reproduce B4. Discuss limitations
+such as the tested environments, finite repetitions, stochastic variation,
+and planning-budget tradeoffs.}
+
+\clearpage
+\appendix
+\section{Generative AI Prompts}
+\label{app:ai-prompts}
+The original-language prompt log is maintained in the UTF-8 text file
+\texttt{AI\_prompts.txt}. Include this file in the single top-level folder of
+the submitted source archive. The initial template request has already been
+recorded there.
+
+\placeholder{Append every subsequent prompt verbatim to the log, including
+follow-up requests. Identify the AI tool and purpose of each interaction.
+Confirm that this appendix and the disclosure accurately describe the
+complete submitted log.}
+
+\section{Supplementary Material (Optional)}
+\placeholder{Include supporting derivations, additional results, or a
+source-file inventory if useful. Remove this appendix if unused. Add real
+references for external methods, code, or material cited in the report.}
+
+\end{document}
