@@ -7,6 +7,18 @@ __pycache__/
 .ruff_cache/
 .venv/
 venv/
+.ipynb_checkpoints/
+.coverage
+.coverage.*
+htmlcov/
+
+# Local environment files and editor backups
+.env
+.env.*
+!.env.example
+*.swp
+*.swo
+*~
 
 # LaTeX compilation intermediates; keep PDFs, figures and experiment data.
 *.aux
@@ -15,6 +27,10 @@ venv/
 *.out
 *.synctex
 *.synctex.gz
+*.synctex(busy)
+*.synctex.gz(busy)
+*.xdv
+*.dvi
 *.toc
 *.lof
 *.lot
@@ -24,6 +40,9 @@ venv/
 *.blg
 *.bcf
 *.run.xml
+*.idx
+*.ind
+*.ilg
 /A1/u8076655_A1_report.log
 /A2/u8076655_A2_report.log
 
