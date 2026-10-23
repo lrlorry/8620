@@ -12,7 +12,7 @@ if __name__ == '__main__':
     parser.add_argument('--workers',type=int,default=1)
     parser.add_argument('--with-tuning',action='store_true',help='Also rerun the development-set parameter study')
     args=parser.parse_args()
-    suites=[('budget',20),('control',20),('factorial',20),('components',20),('random',10),('regression',20),('baseline',20)]
+    suites=[('budget',20),('control',20),('factorial',20),('components',20),('random',10),('regression',20),('baseline',20),('supplement',20)]
     if args.with_tuning:
         for round_ in (1,2):
             subprocess.run([sys.executable,str(ROOT/'experiments.py'),'--suite','tuning','--round',str(round_),

@@ -9,6 +9,7 @@
 \input{tables/random_rows.tex}
 \input{tables/regression_rows.tex}
 \input{tables/tuning_rows.tex}
+\input{tables/supplement_rows.tex}
 \section*{Part B: Multi-drone planning under uncertainty (35 points)}
 \begingroup
 \setlength{\parindent}{0pt}
@@ -85,6 +86,25 @@ already reserved cells receive $10^9$.
 commands within $1.05$ of the minimum, with weights $e^{-3(\mathrm{score}-\min)}$.
 \textsc{Explore} samples uniformly from free, in-grid, unreserved targets
 when available.
+Figure~\ref{fig:risk-maps} shows these maps on two single-drone cases.
+Slip risk $\rho$ is confined to cells beside obstacles, so the risk-weighted
+cost-to-go routes the greedy policy around a cluttered block that the step
+distance would cut through (top). Behind a wall every route must pay for the
+one gap (bottom); there the executed run hesitates before crossing, the
+horizon effect noted in the limitations.
+
+\begin{figure}[H]
+\centering
+\includegraphics[width=\linewidth]{figures/risk_maps.pdf}
+\caption{Guidance maps for two fixed-altitude single-drone cases
+(Appendix~\ref{app:supplement}). Left: breadth-first steps $\delta(p)$ with
+the greedy route of risk-free guidance ($w=0$). Middle: departure risk
+$\rho(p)$, the probability that the next move slips into an obstacle.
+Right: risk-weighted cost-to-go $J(p)$ with the risk-aware greedy route (top)
+or the executed seed-0 run (bottom). Dark cells are obstacles; circle: start;
+star: goal. Greedy routes assume no slips; colour scales differ by panel.}
+\label{fig:risk-maps}
+\end{figure}
 
 \textbf{The four MCTS components.}
 \begin{enumerate}[label=(\arabic*),itemsep=2pt]
@@ -225,7 +245,11 @@ regression episodes are listed in Appendix~\ref{app:regression}.}
 \end{table}
 
 A further 520 search-free runs pair the base policy with the completed
-regression and generated suites (Appendix~\ref{app:regression}).
+regression and generated suites (Appendix~\ref{app:regression}). Seven
+supplementary end-to-end cases (280 runs, each paired with the base policy)
+cover solvable fixed-altitude single-drone maps, fixed-altitude drones on
+different layers, and a goal inside a teammate's only corridor
+(Appendix~\ref{app:supplement}).
 
 \textbf{Metrics.} With $F$ free cells, there are up to $F^N$ positional
 configurations and $B^N$ joint commands.

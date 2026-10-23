@@ -18,6 +18,7 @@ matplotlib.use('Agg')
 import matplotlib.pyplot as plt
 import numpy as np
 from scipy import stats
+import yaml
 
 ROOT=Path(__file__).resolve().parents[1]
 REPORT=next((p for p in (ROOT/'report',ROOT.parent/'A2')
@@ -25,7 +26,7 @@ REPORT=next((p for p in (ROOT/'report',ROOT.parent/'A2')
 TABLES=REPORT/'tables'
 FIGURES=REPORT/'figures'
 CHOSEN='anchor_z1_w0.5'  # development-set arm adopted as the solver default
-EXPECTED={'regression':360,'random':160,'factorial':540,'components':880,'budget':400,'control':160,'baseline':520}
+EXPECTED={'regression':360,'random':160,'factorial':540,'components':880,'budget':400,'control':160,'baseline':520,'supplement':280}
 VARIANTS=['no_guidance','no_leaf','no_widening','no_risk','visits_choice','heuristic']
 NAMES={'full':'Full solver','no_guidance':'Uniform proposals/rollouts','no_leaf':'Zero leaf value',
        'no_widening':'No progressive widening','no_risk':'Risk-free guidance',
@@ -348,6 +349,43 @@ def analyse_baseline(regression,random,baseline,numbers,summary):
         numbers['EquivIdentical']=equivalence['identical'];numbers['EquivTotal']=equivalence['replayed_episodes']
 
 
+def analyse_supplement(rows,numbers,summary):
+    # Supplementary end-to-end cases; the base policy runs on the same seeds.
+    table=[];by=grouped(rows,('scenario','variant'))
+    labels={'supp_single_example_2d':'Supplied map, 1 drone','supp_single_wallgap_2d':'Wall with one gap, 1 drone',
+            'supp_single_slalom_2d':'Slalom, 1 drone','supp_single_clutter_2d':'Five obstacles, 1 drone',
+            'supp_layers_cross_2d':'Two layers, crossing, 2 drones','supp_layers_four_2d':'Two layers, 4 drones',
+            'supp_yield_corridor':'Goal inside corridor, 2 drones'}
+    totals={'full':[0,0],'heuristic':[0,0]}
+    for name,label in labels.items():
+        full,greedy=summarize(by[name,'full']),summarize(by[name,'heuristic'])
+        alpha=by[name,'full'][0]['alpha'] or ''
+        s=full['success']
+        table.append([label,count(full),f"[{100*s['lower']:.0f}, {100*s['upper']:.0f}]",count(greedy),
+                      full['obstacle_collisions'],full['vehicle_collisions'],full['timeouts'],fmt(full['penalized_steps'])])
+        for variant,x in (('full',full),('heuristic',greedy)):
+            totals[variant][0]+=x['success']['successes'];totals[variant][1]+=x['success']['n']
+        numbers['Supp'+''.join(ch for ch in name.title() if ch.isalnum())]=count(full)
+    latex_rows('supplement_rows',table)
+    numbers['SuppFull']=f"{totals['full'][0]}/{totals['full'][1]}"
+    numbers['SuppGreedy']=f"{totals['heuristic'][0]}/{totals['heuristic'][1]}"
+    numbers['SuppTimeouts']=sum(r['termination']=='timeout' for r in rows)
+    summary['supplement']=totals
+    # Horizon effect in the wall-gap case: successful runs versus the shortest route.
+    gap=[r['steps'] for r in by['supp_single_wallgap_2d','full'] if r['success']]
+    numbers['SuppGapSteps']=f"{np.mean(gap):.0f}"
+    route=yaml.safe_load((ROOT/'environments/supp_single_wallgap_2d.yaml').read_text())
+    numbers['SuppGapRoute']=max(abs(g-s) for g,s in zip(route['goal_positions'][0],route['start_positions'][0]))
+    probe=ROOT/'results/probes/risk_leaf_probe.jsonl'
+    if probe.exists():
+        trials=[json.loads(line) for line in probe.read_text().splitlines()]
+        for arm,tag in (('base','Base'),('riskleaf','Risk')):
+            mine=[t for t in trials if t['arm']==arm]
+            numbers[f'Probe{tag}']=f"{sum(t['term']=='success' for t in mine)}/{len(mine)}"
+            steps=[t['steps'] for t in mine if t['cfg']=='supp_single_wallgap_2d.yaml' and t['term']=='success']
+            numbers[f'Probe{tag}GapSteps']=f"{np.mean(steps):.0f}"
+
+
 def analyse_tuning(numbers,summary):
     rows,order=[],[]
     for index in (1,2):
@@ -441,6 +479,7 @@ def main():
     analyse_random(suites['random'],numbers,summary)
     analyse_regression(suites['regression'],suites['baseline'],numbers,summary)
     analyse_baseline(suites['regression'],suites['random'],suites['baseline'],numbers,summary)
+    analyse_supplement(suites['supplement'],numbers,summary)
     analyse_tuning(numbers,summary)
     total=sum(map(len,suites.values()))
     numbers['TotalEpisodes']=f'{total:,}';summary['total_episodes']=total

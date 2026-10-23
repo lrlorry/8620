@@ -98,6 +98,31 @@ def main():
         manifest.append(dict(name=f'branch_x{copies}', suite='control', mask=f'dup{copies}',
                              path='environments/factor_S10_A26_C2.yaml', S=10, A=26*copies, C=2, alpha=.25))
 
+    # Supplementary end-to-end cases: solvable fixed-altitude single-drone maps, fixed-altitude
+    # drones on different layers, and a drone whose goal lies inside a teammate's only corridor.
+    supplement = {
+        'supp_single_example_2d': config((10,10,5), [(0,2,2)], [(9,3,2)], [(5,7,2),(5,3,2)],
+                                         altitude=False, alpha=.5),
+        'supp_single_wallgap_2d': config((12,8,1), [(0,1,0)], [(11,6,0)],
+                                         [(6,y,0) for y in range(8) if y != 4], altitude=False, alpha=.5),
+        'supp_single_slalom_2d': config((12,7,1), [(0,3,0)], [(11,3,0)],
+                                        [(3,2,0),(3,3,0),(3,4,0),(6,3,0),(8,2,0),(8,3,0),(8,4,0)],
+                                        altitude=False, alpha=1.),
+        'supp_single_clutter_2d': config((10,10,1), [(0,5,0)], [(9,5,0)],
+                                         [(2,5,0),(4,4,0),(4,6,0),(6,5,0),(7,3,0)], altitude=False, alpha=1.),
+        'supp_layers_cross_2d': config((10,10,5), [(0,2,1),(0,7,2)], [(9,7,1),(9,2,2)],
+                                       [(5,7,2),(5,3,2)], altitude=False, alpha=.5),
+        'supp_layers_four_2d': config((10,8,3), [(0,1,0),(0,6,0),(0,1,2),(0,6,2)],
+                                      [(9,6,0),(9,1,0),(9,6,2),(9,1,2)], [(5,3,0),(5,4,2)],
+                                      altitude=False, alpha=.25),
+        'supp_yield_corridor': config((10,3,1), [(0,1,0),(0,0,0)], [(9,1,0),(5,1,0)],
+                                      [(x,y,0) for x in (3,4,5,6) for y in (0,2)], altitude=False, alpha=.1),
+    }
+    for name, data in supplement.items():
+        path = folder/f'{name}.yaml'
+        path.write_text(yaml.safe_dump(data, sort_keys=False))
+        manifest.append(dict(name=name, suite='supplement', path=str(path.relative_to(ROOT)), mask='full'))
+
     # Development layouts for parameter selection only; never used in reported evaluations.
     rng = np.random.default_rng(4620)
     folder_dev = folder/'dev'

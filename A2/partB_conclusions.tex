@@ -9,6 +9,14 @@ The $t$ intervals for bimodal $L$ are approximate, and generated-layout
 replication is limited. Fixed-simulation experiments do not reproduce a
 binding demo deadline on every machine. Static guidance does not model
 detours around frozen drones beyond the leaf disconnection check; observed
-collisions have not been proved unavoidable.
+collisions have not been proved unavoidable. The leaf estimate charges no
+collision risk, so search can postpone an unavoidable risky passage beyond
+its horizon: in the wall-gap case (Figure~\ref{fig:risk-maps}, bottom
+right) successful runs averaged
+$\val{SuppGapSteps}$ steps for an $\val{SuppGapRoute}$-step route. A
+risk-charged leaf shortened those runs in a small probe
+($\val{ProbeBaseGapSteps}$ to $\val{ProbeRiskGapSteps}$ steps) without raising
+success ($\val{ProbeRisk}$ versus $\val{ProbeBase}$ over eight tasks), so it was
+not adopted.
 Stronger coordination tasks and outcome widening or open-loop
 trees would be useful follow-up tests.

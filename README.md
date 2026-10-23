@@ -21,9 +21,10 @@ the initial A2 results are retained for comparison.
 
 ## Read the results with their version context
 
-- The completed evaluation has **3,020 episodes**: 360 regression, 160 generated
+- The completed evaluation has **3,300 episodes**: 360 regression, 160 generated
   layouts, 540 factorial, 880 component, 400 search-budget, 160 mechanism-control
-  and 520 search-free baseline episodes. The separate parameter study has
+  episodes, 520 search-free baseline episodes and 280 supplementary end-to-end
+  episodes. The separate parameter study has
   **1,920 development episodes** in two rounds.
 - Each suite retains its generating planner hash in `*.meta.json`. Two later
   edge-case fixes address fixed-altitude collision guidance and frozen-goal

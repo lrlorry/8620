@@ -14,7 +14,7 @@ def main():
     small=json.loads((ROOT/'results/small_model_verification.json').read_text())
     summary=json.loads((ROOT/'results/summary.json').read_text())
     software=json.loads((ROOT/'results/software_environment.json').read_text())
-    assert summary['total_episodes']==3020 and small['passed']
+    assert summary['total_episodes']==3300 and small['passed']
     rows=[]
     for name,label in LABELS:
         r=measured['default_demos'][name]

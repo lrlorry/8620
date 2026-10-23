@@ -122,7 +122,10 @@ outcomes, risk maps, admissible proposals, duplicated labels, progress output,
 seeded reproducibility, independent RNGs, discount endpoints, zero/tiny budgets,
 finite horizons, static infeasibility and invalid configurations.
 
-`environments/manifest.json` lists 85 entries: 18 named regression cases,
+`environments/manifest.json` lists 92 entries (some controls reuse a layout
+with a different action mask): 18 named regression cases, 7 supplementary
+end-to-end cases (solvable fixed-altitude single-drone maps, fixed-altitude
+drones on different layers, a goal inside a teammate's only corridor),
 27 factorial conditions, 16 generated layouts (drone count crossed with noise
 level), 8 mechanism controls, and 16 development layouts used only for
 parameter selection.
@@ -138,11 +141,14 @@ python scripts/make_scenarios.py
 python scripts/run_all_experiments.py --workers 12 [--with-tuning]
 python scripts/analyse_results.py
 python scripts/release_validation.py      # single process: tests, demos, 10 s check
+python scripts/verify_equivalence.py --workers 12   # replay reported seed-0 episodes
+python scripts/probe_risk_leaf.py --workers 12      # exploratory risk-charged leaf probe
+python scripts/plot_risk_maps.py                    # guidance heatmaps (report Figure 1)
 ```
 
-The reported design has 3,020 episodes (360 regression, 160 generated,
+The reported design has 3,300 episodes (360 regression, 160 generated,
 540 factorial, 880 component, 400 budget, 160 control, 520 search-free
-baseline) plus 1,920 development-set episodes. Two planner fixes made after the
+baseline, 280 supplementary) plus 1,920 development-set episodes. Two planner fixes made after the
 reported runs cannot fire in any reported scenario; `scripts/verify_equivalence.py`
 replays every reported seed-0 episode with the final code and records the
 step-by-step comparison in `results/planner_equivalence.json`. Raw outcomes, seeds, search diagnostics and

@@ -63,6 +63,13 @@ def jobs_for(suite, scenarios, repetitions, simulations, tuning_round=1):
             for cap in (16, 64, 256, 1024, 2000):
                 for seed in range(repetitions):
                     yield by_name[name], 'full', cap, seed, {}
+    elif suite == 'supplement':
+        # Supplementary end-to-end cases, each paired with its search-free base policy.
+        for s in scenarios:
+            if s['suite'] == 'supplement':
+                for variant in ('full', 'heuristic'):
+                    for seed in range(repetitions):
+                        yield s, variant, 0 if variant == 'heuristic' else simulations, seed, {}
     elif suite == 'baseline':
         # Search-free base policy on the regression and generated suites, paired with their full runs.
         for s in scenarios:
@@ -102,7 +109,7 @@ def execute(task):
 def main():
     parser = argparse.ArgumentParser(description=__doc__)
     parser.add_argument('--suite', choices=['regression','random','factorial','components',
-                                            'budget','control','baseline','tuning'], required=True)
+                                            'budget','control','baseline','supplement','tuning'], required=True)
     parser.add_argument('--repetitions', type=int, default=20)
     parser.add_argument('--simulations', type=int, default=2000)
     parser.add_argument('--workers', type=int, default=1)

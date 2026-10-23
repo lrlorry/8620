@@ -452,7 +452,7 @@ destinations to select driving actions.
 \texttt{multi\_drone*.py} & Supplied simulator and configuration class (unchanged core). \\
 \texttt{experiments.py} & Simulation-capped, resumable experiment runner. \\
 \texttt{tests/} & Unit tests for model semantics, guidance and planning behaviour. \\
-\texttt{environments/} & All 85 scenario entries (\texttt{dev/}: development set) and the manifest. \\
+\texttt{environments/} & All 92 scenario entries (\texttt{dev/}: development set) and the manifest. \\
 \texttt{results/} & Raw data, provenance, verification and seed-0 traces (\texttt{dev/}: tuning). \\
 \texttt{scripts/} & Scenario generation, experiments, analysis, validation and packaging. \\
 \texttt{report/} & LaTeX sources, generated tables and figures. \\
@@ -544,6 +544,33 @@ its failure penalty is the scenario's own step limit.}
 \toprule Scenario & Success & No search & Obst. & Veh. & $L$ & Calls/step \\
 \midrule
 \RegressionRows
+\bottomrule
+\end{tabular}
+\end{table}
+
+\section{Supplementary end-to-end cases}
+\label{app:supplement}
+These cases fill gaps in the main suites: solvable fixed-altitude single-drone
+maps (only the infeasible wall case was in the regression suite), fixed-altitude
+drones on different layers (the setting of the same-layer slip neighbourhood),
+and a drone whose goal lies inside a teammate's only corridor. Each runs 20
+seeds at 2{,}000 simulations per decision, paired with the search-free base
+policy (\texttt{results/supplement.csv}). The full solver succeeds in
+$\val{SuppFull}$ runs and the base policy in $\val{SuppGreedy}$; there are
+$\val{SuppTimeouts}$ timeouts, so no run deadlocked, and every failure is a
+slip collision. The two weaker cases force passages beside obstacles: a
+one-cell gap in a wall at $\alpha=0.5$ and a corridor lined with obstacles.
+
+\begin{table}[H]
+\centering\footnotesize
+\caption{Supplementary cases ($n=20$ each; fixed altitude). No search: the
+base policy on the same seeds. Obst./Veh./T.o.: obstacle-collision,
+inter-drone-collision and timeout episodes of the full solver. $L$: mean
+$\pm$95\% half-width.}
+\begin{tabular}{@{}lcccrrrr@{}}
+\toprule Case & Success & Wilson 95\% (\%) & No search & Obst. & Veh. & T.o. & $L$ \\
+\midrule
+\SupplementRows
 \bottomrule
 \end{tabular}
 \end{table}

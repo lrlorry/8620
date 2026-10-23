@@ -688,3 +688,87 @@ Tool: OpenAI Codex
 Purpose: Commit and push the completed A2 implementation, results and report, then review the published version.
 Prompt (verbatim):
 提交代码到仓库 然后重新审核下
+
+Tool: Anthropic Claude Code (Claude Opus 5.5)
+Purpose: Confirm that all experiments had finished.
+Prompt (verbatim):
+实验跑完了吗
+
+Tool: Anthropic Claude Code (Claude Opus 5.5)
+Purpose: Ask for an assessment of a second Codex review on scenario coverage (pasted below as part of the prompt).
+Prompt (verbatim, including the pasted Codex review):
+你评估下 codex说的这几个值得补充吗 
+
+**题目主要范围已覆盖，但还不能称为“全部场景覆盖”。** 这次核对发现了三个值得补的缺口。
+
+目前覆盖了：
+
+- 1–4 架无人机、固定高度和三维飞行。
+- 0–5 个障碍，以及更多障碍的压力场景。
+- 不同噪声强度、窄通道、交换目标、边界和小网格。
+- 已到达目标、不可达、共享目标、步数不足。
+- 碰撞与奖励规则、随机数独立性、零预算和时间限制。
+
+[场景清单](/Users/apple/github/8620/A2_code/environments/manifest.json)有 **85 个配置条目，其中 16 个用于调参**；这些条目包含共享布局的对照，不能理解成 85 种独立环境。
+
+尚缺少充分的端到端验证：
+
+| 场景 | 当前缺口 |
+|---|---|
+| **单机、固定高度、有障碍且可解** | 独立评测集中只有不可达墙壁案例；可解案例只出现在开发集。这类最值得补 |
+| **固定高度、多机分别位于不同高度层** | 已有风险计算单测，缺少完整任务运行 |
+| **必须先让行、延迟到达目标才能让队友通过** | 已测试冻结占用导致断连的估值，缺少从起点到完成的协同回归 |
+
+另外，**覆盖不代表必胜**：窄通道和强风分别成功 **18/20**，三机三维为 **19/20**。
+
+我建议优先补上这三类完整任务测试。若只增加测试、不改变算法，现有正式实验无需全部重跑。
+
+Tool: Anthropic Claude Code (Claude Opus 5.5)
+Purpose: Run the supplementary end-to-end experiments.
+Prompt (verbatim):
+那你先补一下实验吧
+
+Tool: Anthropic Claude Code (Claude Opus 5.5)
+Purpose: Progress query for the supplementary experiments.
+Prompt (verbatim):
+跑完了吗
+
+Tool: Anthropic Claude Code (Claude Opus 5.5)
+Purpose: Choose to add the supplementary results to the report (Claude edits; Codex will review afterwards).
+Prompt (verbatim):
+2吧 你先改 毕竟实验你弄的 之后我让codex 审核校对
+
+Tool: Anthropic Claude Code (Claude Opus 5.5)
+Purpose: Ask for an opinion on a ChatGPT suggestion to add intermediate visualisations (pasted below as part of the prompt).
+Prompt (verbatim, including the pasted suggestion):
+gpt说需要补充可视化图 你觉得呢 
+
+3. 我认为最值得补充哪一种中间可视化？
+首选：MCTS 根节点动作价值图。
+
+每次规划时，显示若干主要候选联合动作的：
+\[
+Q(s,a),\qquad N(s,a)
+\]
+
+并标注最终选中的动作和 Greedy 基线动作。
+
+它能直观回答一个非常关键的问题：
+MCTS 搜索了哪些动作？为什么最后选择这个动作，而不是最短路径启发式动作？
+
+其次是风险代价热力图，展示 Dijkstra 的 \(J_i(p)\) 和局部碰撞风险 \(\rho(p)\)。这样你可以直观看出为什么某些靠近障碍物的路线被赋予更高成本。
+
+如果是为了 COMP8620 的现场 Demo 和 B4 报告，我建议优先补充这两种离线可视化，读取已有搜索诊断或额外导出的数据生成静态图片，避免在每个规划步骤实时绘图而影响 10 秒时间限制。
+
+总结：目前已经能看到无人机怎么移动，以及算法最终表现如何；但还不能直观看到 MCTS 为什么选择某个动作。后者是当前可视化能力最明显的缺口。
+
+Tool: Anthropic Claude Code (Claude Opus 5.5)
+Purpose: Add the risk-cost heatmap figure (guidance maps) to the report.
+Prompt (verbatim):
+风险代价热力图 补充一下吧
+
+
+Tool: OpenAI Codex
+Purpose: Remove generated caches and upload the current assignment sources, results and report to GitHub.
+Prompt (verbatim):
+清除中间缓存文件 然后上传到github
