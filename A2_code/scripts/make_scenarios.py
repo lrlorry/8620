@@ -91,6 +91,9 @@ def main():
         path.write_text(yaml.safe_dump(data, sort_keys=False))
         manifest.append(dict(name=name, suite='control', path=str(path.relative_to(ROOT)), mask='full',
                              S=10, A=26, C=clutter, alpha=.01))
+    for clutter in (0,2,5):
+        manifest.append(dict(name=f'lownoise_A6_C{clutter}', suite='control', mask='axial',
+                             path=f'environments/lownoise_C{clutter}.yaml', S=10, A=6, C=clutter, alpha=.01))
     for copies in (2,4):
         manifest.append(dict(name=f'branch_x{copies}', suite='control', mask=f'dup{copies}',
                              path='environments/factor_S10_A26_C2.yaml', S=10, A=26*copies, C=2, alpha=.25))

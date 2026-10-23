@@ -1,9 +1,8 @@
 # COMP8620: intelligent robotics assignments
 
-This repository is a **work-in-progress review snapshot** of the assignments.
-It includes the current A2 implementation, its experimental design, the previous
-completed results, and A1 material for comparison. It is not a declaration that
-the new experiments or final submission have been completed.
+This repository contains the COMP8620 assignments, including the current A2
+solver, completed experiments, report and submission archive. A1 material and
+the initial A2 results are retained for comparison.
 
 ## Start here for an A2 Part B review
 
@@ -22,23 +21,30 @@ the new experiments or final submission have been completed.
 
 ## Read the results with their version context
 
-- The current code contains revisions made after the initial code review.
-  Its development-set parameter study is still in progress. Any committed
-  `A2_code/results/dev/tuning.csv` is a partial snapshot of that running study.
-- The revised design plans **2,280 evaluation episodes** and **1,280 separate
-  development/tuning episodes**. These are planned counts, not completion claims.
-  Check the actual CSVs and their metadata before drawing conclusions.
+- The completed evaluation has **3,020 episodes**: 360 regression, 160 generated
+  layouts, 540 factorial, 880 component, 400 search-budget, 160 mechanism-control
+  and 520 search-free baseline episodes. The separate parameter study has
+  **1,920 development episodes** in two rounds.
+- Each suite retains its generating planner hash in `*.meta.json`. Two later
+  edge-case fixes address fixed-altitude collision guidance and frozen-goal
+  disconnection. [Equivalence validation](A2_code/results/planner_equivalence.json)
+  records **137/137 identical seed-0 replays** with the current planner;
+  this is not a claim to have rerun every evaluation episode.
+- [Release validation](A2_code/results/release_validation.json) records 34 passing
+  unit tests and four successful default-budget demo runs. The largest measured
+  default decision took about 9.21 seconds on the development machine.
+- The current [report PDF](A2/u8076655_A2_report.pdf),
+  [LaTeX source](A2/u8076655_A2_report.tex) and
+  [submission archive](A2/u8076655_A2_code.zip) include the revised study.
+  [Package validation](A2/package_validation.json) records file-hash checks,
+  isolated execution and tests, analysis regeneration and report compilation.
 - [Archived initial results](archive/A2_v1_results/) contain the completed
   earlier study: 1,550 evaluation episodes, mostly using a 0.04-second planning
   allowance. The per-suite metadata records the earlier planner hash.
-- The current [A2 report PDF](A2/u8076655_A2_report.pdf), its generated figures
-  and tables, `package_validation.json`, and the existing submission ZIP are
-  from that earlier report/release. They have **not yet been regenerated and
-  validated for the revised solver and experiment design**. Some working
-  documentation may already describe the planned revised design.
-- Consequently, old timing, success-rate and package-verification results must
-  not be treated as fresh validation of the current source code. This snapshot
-  deliberately preserves both the draft and its provenance for review.
+- The report finds that guidance carries most completion performance on the
+  tested tasks; extra search has no statistically resolved benefit there.
+  Local validation does not guarantee success on unknown marking scenarios or
+  a hard real-time bound on different hardware.
 
 ## Earlier assignment
 

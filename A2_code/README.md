@@ -16,8 +16,10 @@ followed by a one-line result. The complete episode summary is printed as JSON
 on stdout. `--quiet` suppresses the progress lines.
 
 The default allowance is **9.5 seconds per decision** with at most 2,000 MCTS
-simulations; the wall-clock deadline (97% of the allowance) binds first on
-slower machines, so no decision exceeds 10 seconds. The loop replans after
+simulations. Search stops at 97% of the allowance and checks the deadline
+before every simulator call, so an overrun is limited to one simulator call
+plus bookkeeping; on the development machine the largest default decision
+took about 9.2 s. This is a measurement, not a hard real-time guarantee. The loop replans after
 every executed transition. Planning is serial and single-threaded (the runner
 sets numerical-library thread limits to one). A planning simulator and a
 separate execution simulator prevent search samples from advancing the
@@ -57,17 +59,28 @@ leaf estimate and incremental Monte Carlo backups. Guidance is risk-aware:
   `d/(d+alpha)` rule) and `lambda = (|collision penalty| + goal reward) / |step cost|`.
   A detour is taken only when it buys enough collision probability.
 - A joint proposal adds the expected loss of another active drone slipping
-  into the chosen cell this step.
+  into the chosen cell this step (only drones in the same layer when altitude
+  is fixed).
+- The leaf estimate drops the goal reward of a drone that drones frozen at
+  their goals disconnect from its goal.
 - Exploratory proposals and rollout noise choose uniformly among each drone's
   admissible commands (inside the grid, not an obstacle, not already reserved);
   the tree never admits a command towards an invalid cell.
+
+The final root decision is anchored to the greedy (base-policy) action: another
+action is executed only if its mean return exceeds the base action's by more
+than one pooled standard error of the difference. This is a heuristic test,
+not a policy-improvement guarantee. Progressive widening admits
+`ceil(0.5 * sqrt(N(s)+1))` actions, so each candidate receives enough visits to
+be compared. On the development set the earlier most-visited rule made search
+*worse* than its own base policy; the anchored rule removed that loss.
 
 The planner only accesses `get_config()`, `simulate(state, action)`, and
 `num_actions` (property or method). All maps are derived from the public
 configuration; it does not read the simulator's private action vectors,
 distance field, RNG, live positions or time counter. Parameters were selected
-on a separate development set (`environments/dev/`, `results/dev/`) before
-any reported evaluation ran.
+on a separate development set (`environments/dev/`, `results/dev/`, two rounds,
+1,920 episodes) before any reported evaluation ran.
 
 `multi_drone.py` and `multi_drone_config.py` are vendored from the teacher's
 checkout, revision recorded in `UPSTREAM.json`. Only Vedo imports were moved
@@ -109,9 +122,9 @@ outcomes, risk maps, admissible proposals, duplicated labels, progress output,
 seeded reproducibility, independent RNGs, discount endpoints, zero/tiny budgets,
 finite horizons, static infeasibility and invalid configurations.
 
-`environments/manifest.json` lists 82 scenarios: 18 named regression cases,
+`environments/manifest.json` lists 85 entries: 18 named regression cases,
 27 factorial conditions, 16 generated layouts (drone count crossed with noise
-level), 5 mechanism controls, and 16 development layouts used only for
+level), 8 mechanism controls, and 16 development layouts used only for
 parameter selection.
 
 ## Reproduce experiments and figures
@@ -127,9 +140,12 @@ python scripts/analyse_results.py
 python scripts/release_validation.py      # single process: tests, demos, 10 s check
 ```
 
-The reported design has 2,280 episodes (360 regression, 160 generated,
-540 factorial, 720 component, 400 budget, 100 control) plus 1,280
-development-set episodes. Raw outcomes, seeds, search diagnostics and
+The reported design has 3,020 episodes (360 regression, 160 generated,
+540 factorial, 880 component, 400 budget, 160 control, 520 search-free
+baseline) plus 1,920 development-set episodes. Two planner fixes made after the
+reported runs cannot fire in any reported scenario; `scripts/verify_equivalence.py`
+replays every reported seed-0 episode with the final code and records the
+step-by-step comparison in `results/planner_equivalence.json`. Raw outcomes, seeds, search diagnostics and
 provenance (`*.meta.json`, planner hash) are in `results/`; seed-0
 trajectories are in `results/trajectories/`. `summary.csv` gives means with
 95% Student-t intervals and Wilson intervals for success rates. Factor and

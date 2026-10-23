@@ -1,0 +1,10 @@
+{
+  "reported_planner_sha256": [
+    "a55df1057bbf5c36dee40ca66310506656aa45fb0fa31d381b85834f0a4379dc"
+  ],
+  "current_planner_sha256": "5c9c193bd204e3ec9de6b186e77b4e7ba8b4bd71ae3b6dfbb0e5de3e5d5a48f6",
+  "rationale": "Two later fixes: (1) with fixed altitude, the inter-drone slip penalty ignores drones on other layers; every reported fixed-altitude multi-drone scenario has a single layer. (2) The leaf estimate drops goals that drones frozen at their goals disconnect; no subset of goal cells disconnects the free space of any reported scenario. Neither code path changes a reported decision.",
+  "replayed_episodes": 137,
+  "identical": 137,
+  "mismatches": []
+}

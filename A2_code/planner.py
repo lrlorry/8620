@@ -48,7 +48,14 @@ def decode_action(value, base, count):
 class Edge:
     visits: int = 0
     value: float = 0.0
+    spread: float = 0.0  # Welford sum of squared deviations of the sampled returns
     children: dict = field(default_factory=dict)
+
+    def add(self, value):
+        self.visits += 1
+        delta = value - self.value
+        self.value += delta / self.visits
+        self.spread += delta * (value - self.value)
 
 
 @dataclass
@@ -63,10 +70,10 @@ class Deadline(Exception):
 
 class MCTSPlanner:
     def __init__(self, env, seed=0, tree_depth=8, rollout_depth=8,
-                 exploration=0.35, widening=1.5, random_action_prob=0.15,
+                 exploration=0.35, widening=0.5, random_action_prob=0.15,
                  rollout_epsilon=0.10, max_simulations=2000,
                  guided=True, leaf_heuristic=True, progressive=True,
-                 risk_weight=1.0, max_map_cells=150000, budget_cap=10.):
+                 risk_weight=1.0, switch_z=1.0, max_map_cells=150000, budget_cap=10.):
         self.env = env
         self.cfg = env.get_config()
         self.goals = np.asarray(self.cfg.goal_positions, dtype=np.int32)
@@ -90,6 +97,7 @@ class MCTSPlanner:
         self.max_simulations = int(max_simulations)
         self.guided, self.leaf_heuristic, self.progressive = guided, leaf_heuristic, progressive
         self.budget_cap = float(budget_cap)
+        self.switch_z = None if switch_z is None else float(switch_z)
         self.rng = np.random.default_rng(seed)
         self.gamma = float(self.cfg.discount_factor)
         self.scale = max(1., self.count * (abs(self.cfg.goal_reward) +
@@ -99,17 +107,17 @@ class MCTSPlanner:
         self.risk_weight = float(risk_weight)
         self.risk_scale = self.risk_weight * loss / max(abs(self.cfg.step_cost), 1e-3 * loss, 1e-9)
         self.blocked = {tuple(p) for p in (self.cfg.obstacle_cells or [])}
-        self.maps = self.costs = self.clearance = None
+        self.maps = self.costs = self.clearance = self.free = None
         self.land_intended = self.land_slip = self.departure_risk = None
         if math.prod(self.shape) <= max_map_cells:
             free = np.ones(self.shape, dtype=bool)
             for position in self.blocked:
                 free[position] = False
-            self.clearance = distance_transform_edt(free)
+            self.free, self.clearance = free, distance_transform_edt(free)
             self._slip_model(free)
             self.maps = [self._distance_map(tuple(g), free) for g in self.goals]
             self.costs = [self._cost_map(tuple(g), free, m) for g, m in zip(self.goals, self.maps)]
-        self._options_cache, self._adjacent = {}, {}
+        self._options_cache, self._adjacent, self._frozen_maps = {}, {}, {}
         self.steps = 0
         self.last_stats = {}
 
@@ -196,8 +204,21 @@ class MCTSPlanner:
     def unreachable_drones(self, state):
         if self.maps is None:
             return []
-        return [i for i in range(self.count)
-                if not state[i, 3] and not math.isfinite(self._distance(i, state[i, :3]))]
+        return [i for i in range(self.count) if not state[i, 3] and
+                (not math.isfinite(self._distance(i, state[i, :3])) or self._cut_off(i, state))]
+
+    def _cut_off(self, i, state):
+        # True if drones frozen at their goals disconnect drone i from its own goal.
+        frozen = tuple(j for j in range(self.count) if state[j, 3] and j != i)
+        if not frozen or self.free is None or self.free.size > 20000:
+            return False
+        key = (i, frozen)
+        if key not in self._frozen_maps:
+            free = self.free.copy()
+            for j in frozen:
+                free[tuple(self.goals[j])] = False
+            self._frozen_maps[key] = self._distance_map(tuple(self.goals[i]), free)
+        return self._frozen_maps[key][tuple(state[i, :3])] < 0
 
     def _options(self, i, position):
         key = (i, *map(int, position))
@@ -226,6 +247,8 @@ class MCTSPlanner:
             delta = (position[0]-other[0], position[1]-other[1], position[2]-other[2])
             if max(abs(delta[0]), abs(delta[1]), abs(delta[2])) > 2:
                 continue  # No single move ends next to a drone three or more cells away.
+            if not self.cfg.change_altitude and delta[2]:
+                continue  # With fixed altitude, slips stay in the drone's own layer.
             mask = self._adjacent.get(delta)
             if mask is None:
                 mask = (np.abs(self.vectors + np.asarray(delta)).max(axis=1) == 1).astype(float)
@@ -280,7 +303,7 @@ class MCTSPlanner:
     def _leaf(self, state, remaining):
         if not self.leaf_heuristic or remaining <= 0:
             return 0.
-        distances = [self._distance(i, state[i, :3])
+        distances = [math.inf if self._cut_off(i, state) else self._distance(i, state[i, :3])
                      for i in range(self.count) if not state[i, 3]]
         if not distances:
             return 0.
@@ -360,10 +383,21 @@ class MCTSPlanner:
             else:
                 tail = self._search(child, successor, remaining-1, depth+1)
         value = float(reward)/self.scale + self.gamma * tail
-        edge.visits += 1
-        edge.value += (value - edge.value)/edge.visits
+        edge.add(value)
         node.visits += 1
         return value
+
+    def _anchored(self, edges, base, visited):
+        # Keep the greedy base action unless another beats it by z pooled standard errors.
+        dof = sum(edges[a].visits - 1 for a in visited)
+        sigma = math.sqrt(sum(edges[a].spread for a in visited) / dof) if dof > 0 else 0.
+        reference, best, gain = edges[base], base, 0.
+        for a in visited:
+            margin = (edges[a].value - reference.value - self.switch_z * sigma *
+                      math.sqrt(1/edges[a].visits + 1/reference.visits))
+            if margin > gain:
+                best, gain = a, margin
+        return best
 
     def plan(self, current_state, planning_time_per_step=9.5):
         start = time.perf_counter()
@@ -390,7 +424,12 @@ class MCTSPlanner:
         except Deadline:
             pass
         visited = [a for a, edge in root.actions.items() if edge.visits]
-        action = max(visited, key=lambda a: (root.actions[a].visits, root.actions[a].value)) if visited else fallback
+        if not visited:
+            action = fallback
+        elif self.switch_z is None or not root.actions.get(fallback, Edge()).visits:
+            action = max(visited, key=lambda a: (root.actions[a].visits, root.actions[a].value))
+        else:
+            action = self._anchored(root.actions, fallback, visited)
         top = root.actions[action].visits if visited else 0
         self.last_stats = dict(elapsed=time.perf_counter()-start, simulations=completed,
                                generative_calls=self.calls, nodes=self.nodes,

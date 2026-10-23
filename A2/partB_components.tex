@@ -1,0 +1,40 @@
+\subsubsection*{S3: component effects as complexity increases}
+\begin{figure}[H]
+\centering
+\includegraphics[width=0.95\linewidth]{figures/component_effects.pdf}
+\caption{Paired change in $L$ after removing a component at low/high factor
+levels (open/filled markers); 95\% seed-block intervals.
+Positive values favour the full solver.}
+\end{figure}
+
+\textbf{Guidance in expansion and rollout} has the largest measured effect.
+Uniform proposals/rollouts raise $L$ by $\val{CompNoguidance}$
+$\val{CompNoguidanceci}$ and change success by $\val{CompNoguidanceP}$\,pp.
+The loss grows from $\val{CompNoguidanceClo}$ without obstacles to
+$\val{CompNoguidanceChi}$ with five; the clutter interaction excludes zero
+($\val{CompNoguidanceCint}$), whereas its state/action interactions do not.
+This ablation removes both route guidance and admissible-target filtering.
+
+\textbf{Root choice} also matters: most-visited selection raises $L$ by
+$\val{CompVisitschoice}$ $\val{CompVisitschoiceci}$.
+The increase is larger with clutter ($\val{CompVisitschoiceCint}$ interaction
+interval) and smaller with richer commands ($\val{CompVisitschoiceAint}$).
+These comparisons favour the chosen rule on these tasks.
+
+\textbf{Widening, leaf estimates and risk surcharges} have no statistically
+resolved effects across these corners (full estimates in
+Appendix~\ref{app:components}). Routes are roughly eleven steps, comparable
+to the sampled tree depth plus eight-step rollout, which may limit the
+leaf estimate's contribution. The risk-free ablation retains route
+guidance; its result therefore does not contradict the large loss from
+removing all guidance. Risk-aware tuning gains on development layouts
+(Appendix~\ref{app:tuning}) are exploratory evidence.
+
+\textbf{Search versus its base policy.}
+Removing search changes $L$ by $\val{CompHeuristic}$
+$\val{CompHeuristicci}$, with no resolved interaction.
+The evaluated completion performance is largely explained by
+the guided base policy. In the additional regression/generated
+comparison, multi-drone search rescues $\val{BaseMultiRescued}$ episodes and
+loses $\val{BaseMultiLost}$; the pooled difference is inconclusive
+(Appendix~\ref{app:regression}).

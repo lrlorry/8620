@@ -282,6 +282,45 @@ class SolverTests(unittest.TestCase):
         hits=sum(env.simulate(state,1)[3]['num_collisions'] for _ in range(6000))/6000
         self.assertLess(abs(hits-planner.departure_risk[2,2,0]),.02)
 
+    def test_anchored_choice_switches_only_on_significant_gain(self):
+        from planner import Edge
+        env,_=self.env();planner=MCTSPlanner(env,switch_z=1.)
+        def edges(gain,spread):
+            return {0:Edge(visits=10,value=.10,spread=spread),5:Edge(visits=10,value=.10+gain,spread=spread),
+                    7:Edge(visits=30,value=.05,spread=spread)}
+        self.assertEqual(planner._anchored(edges(.02,.9),0,[0,5,7]),0)    # gain inside noise
+        self.assertEqual(planner._anchored(edges(.20,.009),0,[0,5,7]),5)  # clear improvement
+        self.assertEqual(planner._anchored(edges(-.20,.009),0,[0,5,7]),0) # never switch to worse
+
+    def test_fixed_altitude_slip_penalty_ignores_other_layers(self):
+        data=configuration(2);data['grid_size']=[6,6,2]
+        data['start_positions']=[[1,1,0],[2,2,1]];data['goal_positions']=[[5,1,0],[5,2,1]]
+        data['obstacle_cells']=[[3,4,0]]
+        env,_=self.env(data);planner=MCTSPlanner(env)
+        self.assertEqual(np.max(planner._slip_penalty((1,1,0),[(2,2,1)])),0.)  # different layer
+        self.assertGreater(np.max(planner._slip_penalty((1,1,0),[(2,2,0)])),0.)  # same layer
+        data['change_altitude']=True
+        env,_=self.env(data);planner=MCTSPlanner(env)
+        self.assertGreater(np.max(planner._slip_penalty((1,1,0),[(2,2,1)])),0.)  # 3D slips cross layers
+
+    def test_leaf_drops_goals_cut_off_by_frozen_drones(self):
+        data=configuration(2);data['grid_size']=[6,1,1]
+        data['start_positions']=[[0,0,0],[3,0,0]];data['goal_positions']=[[5,0,0],[3,0,0]]
+        env,state=self.env(data);planner=MCTSPlanner(env)
+        self.assertEqual(planner.unreachable_drones(state),[0])
+        self.assertLess(planner._leaf(state,20),0.)  # no goal reward behind the frozen drone
+        data['grid_size']=[6,2,1]  # a second row keeps the goal reachable
+        env,state=self.env(data);planner=MCTSPlanner(env)
+        self.assertEqual(planner.unreachable_drones(state),[])
+        self.assertGreater(planner._leaf(state,20),0.)
+
+    def test_incremental_backup_matches_sample_mean_and_variance(self):
+        from planner import Edge
+        values=np.random.default_rng(2).normal(.3,.2,size=50);edge=Edge()
+        for v in values:edge.add(float(v))
+        self.assertEqual(edge.visits,50);self.assertAlmostEqual(edge.value,values.mean())
+        self.assertAlmostEqual(edge.spread/(edge.visits-1),values.var(ddof=1))
+
     def test_duplicate_labels_keep_physical_law(self):
         data=configuration(1,True)
         first,state=self.env(data,seed=5);second,_=self.env(data,seed=5)

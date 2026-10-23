@@ -14,7 +14,7 @@ def main():
     small=json.loads((ROOT/'results/small_model_verification.json').read_text())
     summary=json.loads((ROOT/'results/summary.json').read_text())
     software=json.loads((ROOT/'results/software_environment.json').read_text())
-    assert summary['total_episodes']==2280 and small['passed']
+    assert summary['total_episodes']==3020 and small['passed']
     rows=[]
     for name,label in LABELS:
         r=measured['default_demos'][name]
@@ -30,8 +30,9 @@ def main():
           "Task & Status & Steps & Sims/step & Mean (s) & Max (s) \\\\\n\\midrule\n"+
           '\n'.join(rows)+"\n\\bottomrule\n\\end{tabular}\n\\end{table}\n"
           f"A forced 10-second call with the trial cap raised to 100,000 returns in\n"
-          f"{measured['forced_10s_check']['measured_elapsed']:.3f} seconds; the wall-clock deadline,\n"
-          "not the trial cap, bounds every decision on slower hardware.\n")
+          f"{measured['forced_10s_check']['measured_elapsed']:.3f} seconds. On slower hardware the wall-clock\n"
+          "deadline, not the trial cap, ends the search; these are measurements on one machine,\n"
+          "not a hard real-time guarantee.\n")
     (REPORT/'tables/validation_summary.tex').write_text(text)
     architecture=software['architecture'].replace('_',r'\_')
     environment=(f"Episodes ran on {software['os'].replace('_',r'\_')} (\\texttt{{{architecture}}}), Python {software['python']},\n"

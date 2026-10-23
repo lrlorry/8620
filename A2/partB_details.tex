@@ -1,0 +1,122 @@
+\section{Algorithm details and model conventions}
+\label{app:guidance}
+For an in-grid cell $q$, let $\mathcal N(q)$ be its physical neighbours
+and $V(q)=|\mathcal N(q)|$. For a command towards a free in-grid neighbour,
+\[
+ \begin{aligned}
+ \pi(q)&=\frac{d(q)}{d(q)+\alpha},&
+ M(q)&=\pi(q)+(V(q)-1)\frac{1-\pi(q)}{B-1},\\
+ \ell(q)&=\frac{\pi(q)}{M(q)},&
+ \sigma(q)&=\frac{1-\pi(q)}{(B-1)M(q)}.
+ \end{aligned}
+\]
+The obstacle-slip surrogate is
+$\rho(q)=|\mathcal N(q)\cap O|\sigma(q)$.
+Dijkstra costs use $1+\lambda\rho(q)$ for entry into a non-goal cell and
+1 for entry into the goal, where
+\[
+ \lambda=\frac{w(G+|C|)}
+ {\max\{|c_{\mathrm{step}}|,\ 10^{-3}(G+|C|),\ 10^{-9}\}},\qquad w=1.
+\]
+With $w=0$, costs reduce to physical breadth-first distances.
+At most 150,000 grid cells are mapped; larger grids use a Chebyshev-distance
+fallback without risk maps. Frozen-goal connectivity checks are cached
+by drone and reached subset on maps of at most 20,000 cells; larger maps
+retain the static-distance estimate.
+
+Grid boundaries are not obstacles. With no obstacles, the supplied
+SciPy distance transform measures distance to a virtual point beyond a
+grid corner, rather than returning infinity, so slips remain possible.
+On an obstacle hit, the simulator retains the drone's old cell but returns
+a terminal flag. The model in B1 maps that outcome to $\bot$; its sampled
+reward is computed before this mapping. Joint commands are encoded
+little-endian, $a=\sum_i a_iB^{i-1}$.
+
+At a rollout cutoff after $L$ sampled steps, the normalised return is
+\[
+ \sum_{j=0}^{L-1}\gamma^j\frac{r_j}{\kappa}
+ +\gamma^L\frac{\widehat V(s_L,h-L)}{\kappa},
+\]
+with zero continuation on terminal outcomes. For a backed-up sample $v$,
+Welford's edge update is
+\[
+ n\gets n+1,\quad \Delta\gets v-Q,\quad
+ Q\gets Q+\Delta/n,\quad S\gets S+\Delta(v-Q).
+\]
+The pooled root variance is
+$\hat\sigma^2=\sum_a S_a/\sum_a(n_a-1)$ over visited actions, or zero
+if the denominator is zero. This is a sample-based heuristic variance
+estimate, not a confidence guarantee.
+
+\section{Factorial condition results}
+\label{app:factorial}
+\begin{table}[H]
+\centering\small
+\caption{All 27 S1 conditions ($n=20$ each). Continuous entries are mean
+$\pm$95\% interval half-width; Calls counts simulator calls per decision.}
+\begin{tabular}{@{}rrrcrrr@{}}
+\toprule $n_y$ & $|A|$ & $|O|$ & Success & $L$ & Return & Calls \\
+\midrule
+\FactorialRows
+\bottomrule
+\end{tabular}
+\end{table}
+
+\section{Mechanism controls}
+\label{app:controls}
+The 6/18/26-command conditions restrict intended directions only; the
+physical slip law retains all 26 neighbours. Duplicated labels map to the
+same physical commands and do not introduce additional slip outcomes.
+\begin{table}[H]
+\centering\footnotesize
+\caption{S2 clutter controls ($n_y=10$, $n=20$ per row).
+$L$: mean $\pm$95\% interval half-width; Obst./Veh.: collision episodes.}
+\begin{tabular}{@{}llrcrrr@{}}
+\toprule Commands & $\alpha$ & $|O|$ & Success & $L$ & Obst. & Veh. \\
+\midrule
+\ClutterControlRows
+\bottomrule
+\end{tabular}
+\end{table}
+\begin{table}[H]
+\centering\footnotesize
+\caption{Duplicated command labels with unchanged physics
+($n_y=10$, $|O|=2$, $n=20$). Root: admitted actions;
+Selected: visit share of the executed root action, which need not be the
+most-visited action. $L$: mean $\pm$95\% interval half-width.}
+\begin{tabular}{@{}lrcrrr@{}}
+\toprule Labels & $|A|$ & Success & $L$ & Root & Selected (\%) \\
+\midrule
+\BranchControlRows
+\bottomrule
+\end{tabular}
+\end{table}
+
+\section{Search-budget results}
+\label{app:budget}
+\begin{table}[H]
+\centering\small
+\caption{S4 ($n=20$ per row). $L$: mean $\pm$95\% interval half-width;
+Root: admitted actions; Depth: mean depth of newly created nodes.}
+\begin{tabular}{@{}lrcrrr@{}}
+\toprule Task (drones) & Sims & Success & $L$ & Root & Depth \\
+\midrule
+\BudgetRows
+\bottomrule
+\end{tabular}
+\end{table}
+
+\section{Generated-layout results}
+\label{app:layouts}
+\begin{table}[H]
+\centering\small
+\caption{S5 marginals: four layouts $\times$ ten seeds per level.
+$L$: mean $\pm$95\% interval half-width; Depth: mean new-node depth.
+One layout per $(N,\alpha)$ pair limits inference beyond these layouts.}
+\begin{tabular}{@{}llcrrr@{}}
+\toprule Factor & Level & Success & Wilson 95\% CI (\%) & $L$ & Depth \\
+\midrule
+\RandomRows
+\bottomrule
+\end{tabular}
+\end{table}

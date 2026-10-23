@@ -1,0 +1,130 @@
+{
+  "config": "/Users/apple/github/8620/A2_code/environments/dev/dev_15_N4.yaml",
+  "seed": 0,
+  "variant": "full",
+  "action_mask": "full",
+  "success": false,
+  "termination": "collision",
+  "steps": 1,
+  "total_reward": -204.0,
+  "discounted_return": -204.0,
+  "setup_seconds": 0.04226920800283551,
+  "planning_seconds": 3.8599977970588952,
+  "mean_plan_seconds": 3.8599977970588952,
+  "max_plan_seconds": 3.8599977970588952,
+  "planning_budget": 3600.0,
+  "num_drones": 4,
+  "num_actions": 4096,
+  "obstacles": 5,
+  "simulations": 500,
+  "generative_calls": 3555,
+  "mean_root_actions": 34.0,
+  "mean_top_share": 0.048,
+  "greedy_fraction": 0.0,
+  "mean_new_depth": 1.4602150537634409,
+  "final_state": [
+    [
+      0,
+      4,
+      0,
+      0
+    ],
+    [
+      0,
+      1,
+      0,
+      0
+    ],
+    [
+      0,
+      1,
+      0,
+      0
+    ],
+    [
+      0,
+      5,
+      0,
+      0
+    ]
+  ],
+  "trajectory": [
+    {
+      "state": [
+        [
+          0,
+          3,
+          0,
+          0
+        ],
+        [
+          0,
+          2,
+          0,
+          0
+        ],
+        [
+          0,
+          0,
+          0,
+          0
+        ],
+        [
+          0,
+          6,
+          0,
+          0
+        ]
+      ],
+      "action": 1948,
+      "reward": -204.0,
+      "next_state": [
+        [
+          0,
+          4,
+          0,
+          0
+        ],
+        [
+          0,
+          1,
+          0,
+          0
+        ],
+        [
+          0,
+          1,
+          0,
+          0
+        ],
+        [
+          0,
+          5,
+          0,
+          0
+        ]
+      ],
+      "done": true,
+      "info": {
+        "num_collisions": 0,
+        "num_vehicle_collisions": 2,
+        "success": false
+      }
+    }
+  ],
+  "searches": [
+    {
+      "elapsed": 3.8597707729786634,
+      "simulations": 500,
+      "generative_calls": 3555,
+      "nodes": 466,
+      "root_actions": 34,
+      "root_visits": 500,
+      "top_share": 0.048,
+      "greedy": 0,
+      "mean_new_depth": 1.4602150537634409,
+      "action": 1948,
+      "budget": 3600.0
+    }
+  ]
+}

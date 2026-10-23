@@ -452,7 +452,7 @@ destinations to select driving actions.
 \texttt{multi\_drone*.py} & Supplied simulator and configuration class (unchanged core). \\
 \texttt{experiments.py} & Simulation-capped, resumable experiment runner. \\
 \texttt{tests/} & Unit tests for model semantics, guidance and planning behaviour. \\
-\texttt{environments/} & All 82 YAML scenarios (\texttt{dev/}: development set) and the manifest. \\
+\texttt{environments/} & All 85 scenario entries (\texttt{dev/}: development set) and the manifest. \\
 \texttt{results/} & Raw data, provenance, verification and seed-0 traces (\texttt{dev/}: tuning). \\
 \texttt{scripts/} & Scenario generation, experiments, analysis, validation and packaging. \\
 \texttt{report/} & LaTeX sources, generated tables and figures. \\
@@ -460,22 +460,26 @@ destinations to select driving actions.
 \end{tabularx}
 \end{table}
 
-\clearpage
 \section{Development-set parameter selection}
 \label{app:tuning}
 Sixteen development layouts (\texttt{environments/dev/}: $10\times10\times5$
 or $10\times10\times1$ grids, 1--4 drones crossed with
-$\alpha\in\{0.25,0.5,1,2\}$, 0--5 random obstacles, generator seed 4620)
-were used once, with ten seeds and 500 simulations per decision, before any
-reported experiment. None of them appears in Question~4. $\Delta L$ is the
-paired change relative to the adopted setting, averaged over layouts within
-each seed.
+$\alpha\in\{0.25,0.5,1,2\}$, 0--5 random obstacles, generator seed 4620) were
+used with ten seeds and 500 simulations per decision, before any reported
+experiment; none of them appears in Question~4. Round~1 varied the risk
+weight $w$ and $c_{\mathrm{UCT}}$ under the then most-visited choice and widening $1.5$;
+round~2 varied the anchored choice. Differences are paired against the
+adopted setting (\texttt{anchor\_z1\_w0.5}), averaged over layouts within each
+seed ($n=10$ blocks). Selecting the best of twelve settings on these layouts
+is optimistic for them, which is why all reported results use other
+scenarios.
 
 \begin{table}[H]
-\centering\small
-\caption{Development-set results ($n=160$ episodes per setting).}
-\begin{tabular}{@{}lrrrrr@{}}
-\toprule Setting & Success & Obst. & Veh. & $L$ & $\Delta L$ [95\% CI] \\
+\centering\footnotesize
+\caption{Development-set results ($n=160$ episodes per setting). Obst./Veh.:
+episodes ending in obstacle / inter-drone collisions.}
+\begin{tabular}{@{}clrrrrrr@{}}
+\toprule Rd. & Setting & Success & Obst. & Veh. & $L$ & $\Delta$success (pp) & $\Delta L$ \\
 \midrule
 \TuningRows
 \bottomrule
@@ -483,6 +487,21 @@ each seed.
 \end{table}
 
 \section{Component results by factorial corner}
+\label{app:components}
+\begin{table}[H]
+\centering\footnotesize
+\caption{Paired component effects at the eight S1 corners. Entries give
+mean changes with 95\% intervals; factor columns show low/high-level means.
+$^\ast$ marks an interaction whose interval excludes zero.}
+\resizebox{\linewidth}{!}{%
+\begin{tabular}{@{}lllccc@{}}
+\toprule Variant & $\Delta L$ & $\Delta$success (pp) & $n_y$ 5 / 20 & $|A|$ 36 / 676 & $|O|$ 0 / 5 \\
+\midrule
+\ComponentRows
+\bottomrule
+\end{tabular}}
+\end{table}
+
 \begin{table}[H]
 \centering\footnotesize
 \caption{Successes per corner (full solver: factorial runs, $n=20$; uniform
@@ -497,22 +516,39 @@ directions per drone and obstacle count.}
 \end{table}
 
 \section{Regression coverage}
-The 18 named scenarios each use 20 seeds at the demo setting (2{,}000
-simulations per decision). Infeasible cases and the one-step horizon case are
+\label{app:regression}
+The 18 named scenarios each use 20 seeds and a fixed cap of 2{,}000
+simulations per decision. ``No search'' is the search-free base policy on the same
+seeds (baseline suite). Infeasible cases and the one-step horizon case are
 expected failures; stochastic collisions in feasible cases remain recorded
 failures.
+
+Across feasible episodes with at least one executed step in the regression
+and generated suites, there are $\val{BaseMultiPairs}$ multi-drone pairs:
+the full solver succeeds in $\val{BaseMultiFull}$ and the base policy in
+$\val{BaseMultiGreedy}$. Search rescues $\val{BaseMultiRescued}$ episodes
+and loses $\val{BaseMultiLost}$. Removing search changes $L$ by
+$\val{BaseMultiDL}$ $\val{BaseMultiDLci}$.
+The $\val{BaseSinglePairs}$ single-drone pairs have
+$\val{BaseSingleFull}$ successes under each policy
+($\Delta L=\val{BaseSingleDL}$ $\val{BaseSingleDLci}$).
+These exploratory intervals pool paired episode differences across layouts;
+they are not the seed-block intervals used for S1--S3 and do not establish
+an advantage for search.
 
 \begin{table}[H]
 \centering\small
 \caption{Named regression scenarios. $L$ shows mean $\pm$95\% CI half-width;
 its failure penalty is the scenario's own step limit.}
-\begin{tabular}{@{}lccrrr@{}}
-\toprule Scenario & Success & Obst. & Veh. & $L$ & Calls/step \\
+\begin{tabular}{@{}lcccrrr@{}}
+\toprule Scenario & Success & No search & Obst. & Veh. & $L$ & Calls/step \\
 \midrule
 \RegressionRows
 \bottomrule
 \end{tabular}
 \end{table}
+
+\input{partB_details.tex}
 
 \clearpage
 \begin{thebibliography}{9}

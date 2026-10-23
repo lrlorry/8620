@@ -521,3 +521,170 @@ Tool: OpenAI Codex
 Purpose: Implement Assignment 2 Part B using the supplied MultiDroneUnc simulator and course materials; design verification and scenario coverage, run serial experiments, analyse measured results, complete the report and package the source submission.
 Prompt (verbatim):
 作为顶尖大学教授 智能机器人领域顶尖专家 参照A1 partB 以及A2 partA 结合所有课件以及tutorial 提到的方法 以及老师提供的代码 我已经git clone 到 ~/github/MultiDroneUnc了 帮我实现 A2 partB   我的思路是 请将所有可能场景覆盖 测试用例写好
+
+Tool: Anthropic Claude Code (Claude Opus 5.5)
+Purpose: Review the Part B code, experiments and report as a senior robotics academic; run diagnostic experiments on collision causes, search behaviour and the factor design.
+Prompt (verbatim):
+审核一下a2 part B的代码 在A2_code 下 作为顶尖大学教授和智能机器人专家
+
+Tool: Anthropic Claude Code (Claude Opus 5.5)
+Purpose: Implement the review's recommendations: revised solver (risk-aware guidance, admissible exploration, anchored decision rule) tuned on a separate development set; demo robustness; redesigned and rerun experiments; updated analysis, report, prompt log and package.
+Prompt (verbatim):
+那你结合分析 帮我补充吧 达到满分标准
+
+Tool: Anthropic Claude Code (Claude Opus 5.5)
+Purpose: Point out that the demo determines the Question 3 mark and runs on Linux lab machines; prompted Linux/Python-version compatibility checks.
+Prompt (verbatim):
+作业说了  The mark for this question will come from
+the program’s performance during the demo 学校的是linux的机器
+
+Tool: Anthropic Claude Code (Claude Opus 5.5)
+Purpose: Ask for the expected experiment run time.
+Prompt (verbatim):
+要跑多久
+
+Tool: Anthropic Claude Code (Claude Opus 5.5)
+Purpose: Ask why the experiments are slow and whether a GPU would help.
+Prompt (verbatim):
+为啥这么慢 需要GPU吗 用GPU 会不会快一点
+
+Tool: Anthropic Claude Code (Claude Opus 5.5)
+Purpose: Progress queries during the experiment runs.
+Prompt (verbatim):
+还要跑多久
+
+Tool: Anthropic Claude Code (Claude Opus 5.5)
+Purpose: Progress query.
+Prompt (verbatim):
+现在跑到什么状态了
+
+Tool: Anthropic Claude Code (Claude Opus 5.5)
+Purpose: Progress query.
+Prompt (verbatim):
+现在什么进度
+
+Tool: Anthropic Claude Code (Claude Opus 5.5)
+Purpose: Progress query.
+Prompt (verbatim):
+跑的怎么样了
+
+Tool: Anthropic Claude Code (Claude Opus 5.5)
+Purpose: Progress query (asked twice).
+Prompt (verbatim):
+还有多久跑完
+
+Tool: Anthropic Claude Code (Claude Opus 5.5)
+Purpose: Ask for an assessment of a separate OpenAI Codex review of the revised Part B (pasted below as part of the prompt) and whether its points can be fixed.
+Prompt (verbatim, including the pasted Codex review):
+针对这个codex 提出的问题 你怎么看 能改吗 
+
+**当前版本符合 Part B 的主要要求，已经具备冲击高分的基础；但还不能说“稳拿满分”。** 相比之前，实验、报告与代码的一致性已经明显改善。
+
+这次我重新跑了 **32 个单元测试，全部通过**；核对了 **2,500 局正式实验**，六组数据记录的规划器哈希均与当前代码一致。保存的四组默认预算演示记录也全部成功。之前“实验未完成、PDF 与实现不同步”的评价，已经不适用于当前版本。
+
+| 评分部分 | 当前评价 |
+|---|---|
+| Q1：MDP 建模，3 分 | 基本完整，终止状态的数学表示还可更严谨 |
+| Q2：算法与伪代码，4 分 | MCTS 四个组件明确，实现与描述基本一致 |
+| Q3：现场演示，8 分 | 本地记录表现良好，得分仍取决于老师提供的两个场景 |
+| Q4：系统实验，20 分 | 固定模拟预算、对照、消融、交互分析和置信区间均已有，部分结论需要收敛 |
+
+算法本身是合理的：**风险感知路径代价引导 MCTS，结合动作渐进扩展、启发式 rollout、叶节点估值，以及带方差惩罚的根动作选择。** 这属于符合课程要求的近似在线规划方案，老师模拟器的核心动力学也保留了。
+
+目前最值得处理的是下面几点。
+
+**1．固定高度场景存在一个真实的风险计算错误。**
+
+在 [_slip_penalty](/Users/apple/github/8620/A2_code/planner.py:228) 中，判断另一架无人机能否滑入候选位置时，只使用了三维 Chebyshev 距离。
+
+当 `change_altitude=False` 时，不同高度的两架无人机无法通过一次运动进入彼此所在高度，但这里仍可能加上碰撞风险惩罚。我构造的小例子中，这种不可能发生的碰撞产生了约 **3.06 的额外代价**。
+
+这会扭曲动作排序。应按实际允许的运动方向判断可达性，并增加一个不同高度的回归测试。
+
+**2．叶节点估值对协同堵塞仍然过于乐观。**
+
+[_leaf](/Users/apple/github/8620/A2_code/planner.py:288) 使用静态地图上的距离，没有把已经到达目标、永久停留的无人机作为占用障碍重新考虑。
+
+例如，一架无人机到达目标后封住唯一通道，另一架已经无法完成任务，叶节点仍可能计入未来目标奖励。我构造的这类状态得到约 **+79** 的估值。
+
+这说明还缺少对“先到目标反而堵住队友”的专门处理。当前搜索有机会提前发现问题，但启发式本身不能可靠识别它。
+
+**3．MCTS 的额外收益尚未得到实验支持。**
+
+这是性能上的主要不足。当前消融中，“仅启发式、不搜索”与完整版的差异置信区间包含零；预算从 16 增至 2,000 次模拟，也没有显示稳定的成功率提升。
+
+因此，现有证据支持：
+
+> 当前性能主要来自风险感知引导；在已测试任务中，增加搜索尚未带来可辨别的收益。
+
+这**不违反作业要求**，诚实分析这种结果也有学术价值。但目前每步花费数秒，尚缺少相应的性能收益证据。
+
+**4．报告把根节点选择规则说得过强，这是最容易避免的失分点。**
+
+[根动作规则](/Users/apple/github/8620/A2_code/planner.py:375) 是一个合理的启发式，但不是经过证明的安全策略改进算法：
+
+- 一倍估计标准误不构成可靠的策略改进保证。
+- 搜索样本具有自适应性，还涉及多个候选动作比较。
+- 样本不足的动作仍可能通过切换条件，例如估计方差为零时。
+
+所以报告中的 “under-sampled alternative can never pass” 和 “no-loss refinement” 应修改。[相关段落](/Users/apple/github/8620/A2/partB_components.tex:47)
+
+“未发现显著损失”也不能推导成“保证没有损失”。同样，[报告中的时间表述](/Users/apple/github/8620/A2/partB.tex:212) 不应保证更慢机器上永远不会超过 10 秒；目前证据只能说明本地测试满足限制。
+
+另外两项属于收尾问题：
+
+- [MDP 状态定义](/Users/apple/github/8620/A2/partB.tex:22) 最好显式加入终止标记或吸收状态 \(\bot\)。撞障碍后位置可能保持原样，仅靠位置、到达标记和时间无法总是区分碰撞终止。
+- [发布验证脚本](/Users/apple/github/8620/A2_code/scripts/release_validation.py:37) 检查了超时，却没有断言演示成功。当前记录确实成功，但将来演示失败仍可能通过该脚本。
+
+我的判断是：**值得保留当前算法框架，优先修正上述具体错误和过强结论。** 场景覆盖已经相当广，但有限测试无法证明覆盖所有可能情况。若两个未知演示场景都成功，且把模型与报告的严谨性补齐，满分有可能；当前还缺少“可以保证满分”的依据。
+
+本次只进行了审核，没有修改代码或报告。
+
+Tool: Anthropic Claude Code (Claude Opus 5.5)
+Purpose: Ask about the consequences of the proposed fix plan (plan A: fix the two planner issues without rerunning experiments, add a search-free baseline, tighten report wording).
+Prompt (verbatim):
+按方案A改 会有什么后果
+
+Tool: Anthropic Claude Code (Claude Opus 5.5)
+Purpose: Ask whether plan A requires report changes.
+Prompt (verbatim):
+按A方案改 不需要改报告是吗
+
+Tool: Anthropic Claude Code (Claude Opus 5.5)
+Purpose: Approve plan A (sent twice; the first send was interrupted).
+Prompt (verbatim):
+那跑方案A吧 现在
+
+
+Tool: OpenAI Codex
+Purpose: Revise and shorten Part B using completed results, correct definitions and claims, and rebuild the PDF while Claude handles plan-A code and validation work.
+Prompt (verbatim):
+那你重新根据现有结果修改partB 吧 针对你说的问题改，实验我现在在让Claude跑  在按方案A跑 Codex 这份审核**基本准确**，我逐条核实后的看法如下：
+
+| # | Codex 的问题 | 我的判断 | 怎么改 | 要重跑实验吗 |
+|---|---|---|---|---|
+| 1 | 固定高度时机间滑移惩罚用了 3D 距离 | **真 bug**，已复现（虚假惩罚 4.25） | 一行修复 + 回归测试 | **不用**：所有报告/开发场景里，固定高度的多机场景都只有 1 层高度，修复前后逐位相同 |
+| 2 | 叶子估值没考虑"先到目标的飞机堵死队友" | **成立**，是理论上的漏洞 | 冻结飞机把某架飞机和它的目标隔断时，叶子估值不再计入它的目标奖励（按"已到达集合"缓存连通性） | **不用**：我检查了全部 85 个场景的所有"冻结子集"，没有一个会切断自由空间，所以这个修正对已报告结果完全无影响 |
+| 3 | MCTS 没有显示出额外收益 | 成立，**报告里已如实写明**；这不是 bug | 补一个便宜的证据：在耦合最强的回归场景（swap、窄道、4 机）上跑"无搜索"对照。这类局只需几秒，约 10 分钟，结果放进附录 | 不用 |
+| 4 | 锚定规则和 10 秒限制说得太绝对 | **完全同意**，这是最容易丢分的地方。比如某个动作只访问了 1 次、合并方差又小时，确实可能通过切换检验 | 改措辞："rarely"代替"never"；"未测到损失"代替"no-loss"；10 s 只说本机实测最大 9.21 s，以及截止时间在每次模拟调用前检查 | 不用 |
+| 5 | MDP 状态缺显式终止 / 吸收态 | 同意：撞障碍后位置不变，仅凭状态确实区分不了 | Q1 加入吸收态 ⊥ | 不用 |
+| 6 | 发布验证脚本没断言 demo 成功 | 同意 | 加断言，重跑验证（约 10 分钟） | 不用 |
+
+**我的建议是方案 A（约 2 小时，不重跑正式实验）**：修第 1、2、6 条，改第 4、5 条措辞，给第 3 条补证据；再写一份等价性记录（新旧 planner 哈希 + 为什么对已报告结果无影响 + 抽样复跑逐位一致），最后重新编译、打包、自检。
+
+**方案 B（再加约 12 小时）**：再改两处行为本身——切换动作要求最少访问次数；提议地图也按冻结飞机重算——然后全部 2500 局今晚重跑。我**不推荐**：离截止只剩 3 天，这两处只影响测试中从未出现的边缘情况，却可能让已经验证好的系统和报告结论出现变动。
+
+至于 Codex 说的"不能保证满分"，我同意：Q3 取决于老师那两个未知场景，谁也无法保证。
+
+按你之前的习惯我先问一下：**按方案 A 改吗？**
+
+Tool: Anthropic Claude Code (Claude Opus 5.5)
+Purpose: Progress query during the plan-A validation run.
+Prompt (verbatim):
+跑完了吗
+
+
+Tool: OpenAI Codex
+Purpose: Commit and push the completed A2 implementation, results and report, then review the published version.
+Prompt (verbatim):
+提交代码到仓库 然后重新审核下

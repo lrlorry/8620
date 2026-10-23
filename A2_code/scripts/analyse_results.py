@@ -24,11 +24,12 @@ REPORT=next((p for p in (ROOT/'report',ROOT.parent/'A2')
              if (p/'u8076655_A2_report.tex').exists()),ROOT/'report')
 TABLES=REPORT/'tables'
 FIGURES=REPORT/'figures'
-CHOSEN='risk1'  # development-set arm adopted as the solver default
-EXPECTED={'regression':360,'random':160,'factorial':540,'components':720,'budget':400,'control':100}
-VARIANTS=['no_guidance','no_leaf','no_widening','no_risk','heuristic']
+CHOSEN='anchor_z1_w0.5'  # development-set arm adopted as the solver default
+EXPECTED={'regression':360,'random':160,'factorial':540,'components':880,'budget':400,'control':160,'baseline':520}
+VARIANTS=['no_guidance','no_leaf','no_widening','no_risk','visits_choice','heuristic']
 NAMES={'full':'Full solver','no_guidance':'Uniform proposals/rollouts','no_leaf':'Zero leaf value',
-       'no_widening':'No progressive widening','no_risk':'Risk-free guidance','heuristic':'Guided policy, no search'}
+       'no_widening':'No progressive widening','no_risk':'Risk-free guidance',
+       'visits_choice':'Most-visited final action','heuristic':'Guided policy, no search'}
 SERIES=['#2a78d6','#eb6834','#1baf7a','#eda100']  # validated categorical slots 1-4 (light surface)
 INK,MUTED='#0b0b0b','#52514e'
 INT_FIELDS=('seed','steps','simulations','generative_calls','num_actions','num_drones','obstacles',
@@ -184,6 +185,12 @@ def analyse_factorial(rows,numbers,summary):
     for s in (5,20):
         x=summarize([r for r in rows if r['S']==s])
         numbers[f'SetupS{s}']=f"{1000*x['setup_seconds']['mean']:.0f}"
+    # Common random numbers: identical seeds give identical episodes unless the extra cells matter.
+    key=lambda r:(r['A'],r['C'],r['seed'])
+    wide={key(r):r for r in rows if r['S']==20}
+    same=[r for r in rows if r['S']==10 and (r['steps'],r['discounted_return'],r['termination'])==
+          (wide[key(r)]['steps'],wide[key(r)]['discounted_return'],wide[key(r)]['termination'])]
+    numbers['SameSTen']=len(same);numbers['SameSTotal']=sum(r['S']==10 for r in rows)
     summary['factorial']=dict(effects=effects,marginals=marginals,pairwise=pairwise,interactions=interactions)
     return marginals
 
@@ -236,7 +243,10 @@ def analyse_budget(rows,numbers,summary):
         curves.setdefault(task,[]).append((cap,x))
         table.append([short[task],f'{cap:,}',count(x),fmt(x['penalized_steps']),
                       f"{x['mean_root_actions']['mean']:.1f}",f"{x['mean_new_depth']['mean']:.2f}"])
-        numbers['Budget'+''.join(ch for ch in task.title() if ch.isalnum())+str(cap)]=count(x)
+        tag='Budget'+''.join(ch for ch in task.title() if ch.isalnum())+str(cap)
+        numbers[tag]=count(x);numbers[tag+'L']=f"{x['penalized_steps']['mean']:.1f}"
+        numbers[tag+'Kept']=f"{np.mean([r['greedy_fraction'] for r in cell]):.2f}"
+        numbers[tag+'Depth']=f"{x['mean_new_depth']['mean']:.1f}"
     latex_rows('budget_rows',table)
     summary['budget']={t:{str(c):x for c,x in v} for t,v in curves.items()}
     return curves,short
@@ -244,16 +254,26 @@ def analyse_budget(rows,numbers,summary):
 
 def analyse_controls(control,factorial,numbers,summary):
     def cell(rows,name):return {r['seed']:r for r in rows if r['scenario']==name}
-    out={};table=[]
-    for alpha,prefix,rows in [(.25,'factor_S10_A26_C',factorial),(.01,'lownoise_C',control)]:
-        cells={c:cell(rows,f'{prefix}{c}') for c in (0,2,5)}
-        for c in (0,2,5):
-            x=summarize(list(cells[c].values()))
-            table.append([f'$\\alpha={alpha:g}$',c,count(x),fmt(x['penalized_steps']),
-                          x['obstacle_collisions'],x['vehicle_collisions']])
-        out[alpha]=interval([cells[5][s]['penalized_steps']-cells[0][s]['penalized_steps'] for s in range(20)])
-        numbers['Clutter'+('Noisy' if alpha>.1 else 'Quiet')]=f"{out[alpha]['mean']:+.1f}"
-        numbers['Clutter'+('Noisy' if alpha>.1 else 'Quiet')+'ci']=f"[{out[alpha]['lower']:+.1f}, {out[alpha]['upper']:+.1f}]"
+    out={};table=[];pooled={}
+    for directions,label in ((26,'all 26'),(6,'axial 6')):
+        for alpha,prefix,rows in [(.25,f'factor_S10_A{directions}_C',factorial),
+                                  (.01,'lownoise_C' if directions==26 else 'lownoise_A6_C',control)]:
+            cells={c:cell(rows,f'{prefix}{c}') for c in (0,2,5)}
+            for c in (0,2,5):
+                x=summarize(list(cells[c].values()))
+                table.append([label if (alpha,c)==(.25,0) else '',f'{alpha:g}' if c==0 else '',c,count(x),
+                              fmt(x['penalized_steps']),x['obstacle_collisions'],x['vehicle_collisions']])
+            deltas=np.array([cells[5][s]['penalized_steps']-cells[0][s]['penalized_steps'] for s in range(20)])
+            pooled.setdefault(alpha,[]).append(deltas)
+            tag=('Noisy' if alpha>.1 else 'Quiet')+f'A{directions}'
+            out[tag]=interval(deltas)
+            numbers['Clutter'+tag]=f"{out[tag]['mean']:+.1f}"
+            numbers['Clutter'+tag+'ci']=f"[{out[tag]['lower']:+.1f}, {out[tag]['upper']:+.1f}]"
+    for alpha,parts in pooled.items():
+        tag='Noisy' if alpha>.1 else 'Quiet'
+        out[tag]=interval(np.mean(parts,axis=0))
+        numbers['Clutter'+tag]=f"{out[tag]['mean']:+.1f}"
+        numbers['Clutter'+tag+'ci']=f"[{out[tag]['lower']:+.1f}, {out[tag]['upper']:+.1f}]"
     latex_rows('clutter_control_rows',table)
     branch=[];copies={1:cell(factorial,'factor_S10_A26_C2'),2:cell(control,'branch_x2'),4:cell(control,'branch_x4')}
     for k,cells in copies.items():
@@ -279,39 +299,76 @@ def analyse_random(rows,numbers,summary):
     latex_rows('random_rows',table)
     for n in (1,4):
         x=summarize([r for r in rows if r['N']==n])
-        numbers[f'DepthN{n}']=f"{x['mean_new_depth']['mean']:.2f}";numbers[f'TopN{n}']=f"{100*x['mean_top_share']['mean']:.1f}"
+        numbers[f'DepthN{n}']=f"{x['mean_new_depth']['mean']:.1f}";numbers[f'TopN{n}']=f"{100*x['mean_top_share']['mean']:.1f}"
+    for a in (.05,2.):
+        numbers[f'DepthAlpha{str(a).replace(".","")}']=f"{summarize([r for r in rows if r['alpha']==a])['mean_new_depth']['mean']:.1f}"
+    overall=summarize(rows)
+    numbers['RandOverall']=count(overall);numbers['RandObstacle']=overall['obstacle_collisions']
+    numbers['RandVehicle']=overall['vehicle_collisions'];numbers['RandTimeouts']=overall['timeouts']
+    numbers['RandLowNoise']=count(summarize([r for r in rows if r['alpha']<=.25]))
+    numbers['RandNFourLow']=count(summarize([r for r in rows if r['N']==4 and r['alpha']<=.25]))
+    numbers['RandNFourHigh']=count(summarize([r for r in rows if r['N']==4 and r['alpha']==2.]))
     summary['random']={'overall':summarize(rows)}
 
 
-def analyse_regression(rows,numbers,summary):
-    table=[]
+def analyse_regression(rows,baseline,numbers,summary):
+    table=[];greedy=grouped(baseline,('scenario',))
     for (case,),cell in grouped(rows,('scenario',)).items():
         x=summarize(cell)
-        table.append([r'\texttt{'+case.replace('_',r'\_')+'}',count(x),x['obstacle_collisions'],
-                      x['vehicle_collisions'],fmt(x['penalized_steps']),f"{x['calls_per_decision']['mean']:,.0f}"])
+        table.append([r'\texttt{'+case.replace('_',r'\_')+'}',count(x),count(summarize(greedy[case,])),
+                      x['obstacle_collisions'],x['vehicle_collisions'],fmt(x['penalized_steps']),
+                      f"{x['calls_per_decision']['mean']:,.0f}"])
         if case in ('demo_open_2d','demo_four_3d','strong_wind','altitude_detour','narrow_passage'):
             numbers['Reg'+''.join(ch for ch in case.title() if ch.isalnum())]=count(x)
     latex_rows('regression_rows',table)
 
 
+def analyse_baseline(regression,random,baseline,numbers,summary):
+    # Full solver versus its search-free base policy on the same scenarios and seeds.
+    greedy={(r['scenario'],r['seed']):r for r in baseline}
+    full=[r for r in regression+random if r['steps']>0 and not r['termination'].startswith('infeasible')]
+    out={}
+    for tag,keep in (('Multi',lambda r:r['num_drones']>=2),('Single',lambda r:r['num_drones']==1)):
+        pairs=[(r,greedy[r['scenario'],r['seed']]) for r in full if keep(r)]
+        delta=interval([g['penalized_steps']-f['penalized_steps'] for f,g in pairs])
+        rescued=sum(f['success'] and not g['success'] for f,g in pairs)
+        lost=sum(g['success'] and not f['success'] for f,g in pairs)
+        out[tag]=dict(pairs=len(pairs),full=sum(f['success'] for f,_ in pairs),
+                      greedy=sum(g['success'] for _,g in pairs),rescued=rescued,lost=lost,delta=delta)
+        numbers[f'Base{tag}Pairs']=len(pairs);numbers[f'Base{tag}Full']=out[tag]['full']
+        numbers[f'Base{tag}Greedy']=out[tag]['greedy'];numbers[f'Base{tag}Rescued']=rescued
+        numbers[f'Base{tag}Lost']=lost;numbers[f'Base{tag}DL']=f"{delta['mean']:+.1f}"
+        discordant=rescued+lost  # exact McNemar test on the discordant pairs
+        numbers[f'Base{tag}P']=f"{stats.binomtest(rescued,discordant).pvalue:.2f}" if discordant else '1.00'
+        numbers[f'Base{tag}DLci']=f"[{delta['lower']:+.1f}, {delta['upper']:+.1f}]"
+    summary['baseline']=out
+    path=ROOT/'results/planner_equivalence.json'
+    if path.exists():
+        equivalence=json.loads(path.read_text())
+        numbers['EquivIdentical']=equivalence['identical'];numbers['EquivTotal']=equivalence['replayed_episodes']
+
+
 def analyse_tuning(numbers,summary):
-    path=ROOT/'results/dev/tuning.csv'
-    if not path.exists():return
-    rows=read('tuning',folder='results/dev')
+    rows,order=[],[]
+    for index in (1,2):
+        if (ROOT/f'results/dev/tuning_r{index}.csv').exists():
+            batch=read(f'tuning_r{index}',folder='results/dev')
+            for r in batch:r['round']=index
+            rows+=batch;order+=[v for v in dict.fromkeys(r['variant'] for r in batch)]
+    if not rows:return
     reference={(r['scenario'],r['seed']):r for r in rows if r['variant']==CHOSEN}
     table=[]
-    for arm,cell in grouped(rows,('variant',)).items():
+    for arm in order:
+        cell=[r for r in rows if r['variant']==arm]
         x=summarize(cell)
-        deltas=[]
-        for s in sorted({r['seed'] for r in cell}):
-            mine=[r for r in cell if r['seed']==s]
-            deltas.append(np.mean([r['penalized_steps']-reference[r['scenario'],s]['penalized_steps'] for r in mine]))
-        d=interval(deltas)
-        table.append([arm[0].replace('_',r'\_'),count(x),x['obstacle_collisions'],x['vehicle_collisions'],
-                      fmt(x['penalized_steps']),'---' if arm[0]==CHOSEN else ci(d)])
-        numbers['Tune'+''.join(ch for ch in arm[0].title() if ch.isalnum())]=count(x)
-    order=['risk0','risk0.3','risk1','risk3','risk1_c0.1','risk1_c1','greedy_risk0','greedy_risk1']
-    table.sort(key=lambda row:order.index(row[0].replace(r'\_','_')))
+        seeds=sorted({r['seed'] for r in cell})
+        def paired(metric):
+            return interval([np.mean([metric_of(r,metric)-metric_of(reference[r['scenario'],s],metric)
+                                      for r in cell if r['seed']==s]) for s in seeds])
+        table.append([cell[0]['round'],arm.replace('_',r'\_'),count(x),x['obstacle_collisions'],x['vehicle_collisions'],
+                      fmt(x['penalized_steps']),'---' if arm==CHOSEN else ci(paired('success')),
+                      '---' if arm==CHOSEN else ci(paired('penalized_steps'))])
+        numbers['Tune'+''.join(ch for ch in arm.title() if ch.isalnum())]=count(x)
     latex_rows('tuning_rows',table)
 
 
@@ -352,22 +409,21 @@ def figures(marginals,components,curves,short):
     axes[0].set_yticks(y,[NAMES[v] for v in VARIANTS]);axes[0].invert_yaxis()
     fig.savefig(FIGURES/'component_effects.pdf',bbox_inches='tight');fig.savefig(FIGURES/'component_effects.png',dpi=200,bbox_inches='tight');plt.close(fig)
 
-    fig,axes=plt.subplots(1,2,figsize=(7,2.7),layout='constrained')
+    fig,axes=plt.subplots(1,2,figsize=(7,2.9),layout='constrained')
     markers=['o','s','^','D']
     for k,(task,points) in enumerate(curves.items()):
-        caps=[c for c,_ in points]
+        caps=[c*1.07**(k-1.5) for c,_ in points]  # dodge series horizontally on the log axis
         success=[100*x['success']['mean'] for _,x in points]
         low=[100*(x['success']['mean']-x['success']['lower']) for _,x in points]
         high=[100*(x['success']['upper']-x['success']['mean']) for _,x in points]
-        axes[0].errorbar(caps,success,yerr=[low,high],color=SERIES[k],marker=markers[k],markersize=5,
-                         linewidth=2,capsize=2,label=short[task])
+        style=dict(color=SERIES[k],marker=markers[k],markersize=4.5,linewidth=2,capsize=1.5,elinewidth=.9)
+        axes[0].errorbar(caps,success,yerr=[low,high],label=short[task],**style)
         axes[1].errorbar(caps,[x['penalized_steps']['mean'] for _,x in points],
-                         yerr=[x['penalized_steps']['half'] for _,x in points],color=SERIES[k],
-                         marker=markers[k],markersize=5,linewidth=2,capsize=2,label=short[task])
+                         yerr=[x['penalized_steps']['half'] for _,x in points],**style)
     for ax,label in zip(axes,('Success rate (%)','Penalised steps $L$')):
         ax.set_xscale('log',base=2);ax.set_xticks([16,64,256,1024,2000],['16','64','256','1024','2000'])
         ax.minorticks_off();ax.grid(axis='y',alpha=.25);ax.set_xlabel('Simulations per decision');ax.set_ylabel(label)
-    axes[0].legend(frameon=False,fontsize=7.5,loc='lower right')
+    fig.legend(*axes[0].get_legend_handles_labels(),loc='outside upper center',ncol=4,frameon=False,fontsize=7.5)
     fig.savefig(FIGURES/'budget_curve.pdf',bbox_inches='tight');fig.savefig(FIGURES/'budget_curve.png',dpi=200,bbox_inches='tight');plt.close(fig)
 
 
@@ -383,7 +439,8 @@ def main():
     curves,short=analyse_budget(suites['budget'],numbers,summary)
     analyse_controls(suites['control'],suites['factorial'],numbers,summary)
     analyse_random(suites['random'],numbers,summary)
-    analyse_regression(suites['regression'],numbers,summary)
+    analyse_regression(suites['regression'],suites['baseline'],numbers,summary)
+    analyse_baseline(suites['regression'],suites['random'],suites['baseline'],numbers,summary)
     analyse_tuning(numbers,summary)
     total=sum(map(len,suites.values()))
     numbers['TotalEpisodes']=f'{total:,}';summary['total_episodes']=total

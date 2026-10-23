@@ -41,6 +41,8 @@ def main():
         print(name,demos[name],flush=True)
         if result['max_plan_seconds']>10:
             raise AssertionError('A default-budget decision exceeded ten seconds')
+        if not result['success']:
+            raise AssertionError(f'Default-budget demo {name} did not succeed')
     env=HeadlessMultiDroneUnc(ROOT/'environments/demo_four_3d.yaml',seed=8620)
     state=env.reset()
     planner=MCTSPlanner(env,max_simulations=100000)
