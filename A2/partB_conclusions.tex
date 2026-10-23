@@ -1,22 +1,7 @@
-Within the factorial's tested levels, clutter causes the largest
-degradation; extra control directions help, while off-route state padding
-has little observed effect. Guided expansion/rollout and the root decision
-rule contribute most, particularly in clutter. Additional search has no
-demonstrated completion benefit over the guided base policy on these tasks.
-
-The ranking is specific to two drones, $\alpha=0.25$ and the chosen layouts.
-The $t$ intervals for bimodal $L$ are approximate, and generated-layout
-replication is limited. Fixed-simulation experiments do not reproduce a
-binding demo deadline on every machine. Static guidance does not model
-detours around frozen drones beyond the leaf disconnection check; observed
-collisions have not been proved unavoidable. The leaf estimate charges no
-collision risk, so search can postpone an unavoidable risky passage beyond
-its horizon: in the wall-gap case (Figure~\ref{fig:risk-maps}, bottom
-right) successful runs averaged
-$\val{SuppGapSteps}$ steps for an $\val{SuppGapRoute}$-step route. A
-risk-charged leaf shortened those runs in a small probe
-($\val{ProbeBaseGapSteps}$ to $\val{ProbeRiskGapSteps}$ steps) without raising
-success ($\val{ProbeRisk}$ versus $\val{ProbeBase}$ over eight tasks), so it was
-not adopted.
-Stronger coordination tasks and outcome widening or open-loop
-trees would be useful follow-up tests.
+The factorial covers two drones at $\alpha=0.25$, and S5 has only one layout
+per $(N,\alpha)$ pair. The $t$ intervals for bimodal $L$ are approximate.
+Fixed-simulation runs do not reproduce a binding demo deadline. Static
+guidance approximates detours around frozen drones. Successful wall-gap
+runs average $\val{SuppGapSteps}$ steps for an $\val{SuppGapRoute}$-step
+static route, suggesting an optimistic cutoff estimate; these experiments
+do not isolate the cause.

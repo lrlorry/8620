@@ -2,13 +2,9 @@
 \input{tables/factorial_rows.tex}
 \input{tables/factor_effect_rows.tex}
 \input{tables/component_rows.tex}
-\input{tables/component_raw_rows.tex}
-\input{tables/budget_rows.tex}
 \input{tables/clutter_control_rows.tex}
 \input{tables/branch_control_rows.tex}
 \input{tables/random_rows.tex}
-\input{tables/regression_rows.tex}
-\input{tables/tuning_rows.tex}
 \input{tables/supplement_rows.tex}
 \section*{Part B: Multi-drone planning under uncertainty (35 points)}
 \begingroup
@@ -86,26 +82,6 @@ already reserved cells receive $10^9$.
 commands within $1.05$ of the minimum, with weights $e^{-3(\mathrm{score}-\min)}$.
 \textsc{Explore} samples uniformly from free, in-grid, unreserved targets
 when available.
-Figure~\ref{fig:risk-maps} shows these maps on two single-drone cases.
-Slip risk $\rho$ is confined to cells beside obstacles, so the risk-weighted
-cost-to-go routes the greedy policy around a cluttered block that the step
-distance would cut through (top). Behind a wall every route must pay for the
-one gap (bottom); there the executed run hesitates before crossing, the
-horizon effect noted in the limitations.
-
-\begin{figure}[H]
-\centering
-\includegraphics[width=\linewidth]{figures/risk_maps.pdf}
-\caption{Guidance maps for two fixed-altitude single-drone cases
-(Appendix~\ref{app:supplement}). Left: breadth-first steps $\delta(p)$ with
-the greedy route of risk-free guidance ($w=0$). Middle: departure risk
-$\rho(p)$, the probability that the next move slips into an obstacle.
-Right: risk-weighted cost-to-go $J(p)$ with the risk-aware greedy route (top)
-or the executed seed-0 run (bottom). Dark cells are obstacles; circle: start;
-star: goal. Greedy routes assume no slips; colour scales differ by panel.}
-\label{fig:risk-maps}
-\end{figure}
-
 \textbf{The four MCTS components.}
 \begin{enumerate}[label=(\arabic*),itemsep=2pt]
 \item \textbf{Selection.} Try unvisited admitted actions first; otherwise maximise
@@ -145,8 +121,8 @@ the pooled within-action variance. Among visited actions, define
 Execute the action with largest positive $m(a)$; otherwise keep $a_g$.
 With no completed trial, use $a_g$ directly.
 This variance-aware switching heuristic has no formal policy-improvement
-guarantee. Parameters were selected on separate
-development layouts (Appendix~\ref{app:tuning}).
+guarantee. Parameters were selected on 16 separate development layouts;
+the tuning results are archived in \texttt{results/dev/}.
 
 \noindent\begin{minipage}{\linewidth}
 \begin{lstlisting}[style=pseudocode,basicstyle=\ttfamily\footnotesize,caption={Online UCT; rollout and admission rules are defined above.}]
@@ -179,20 +155,49 @@ The planner tracks the remaining horizon because \texttt{simulate} does
 not enforce the execution step limit.
 
 \subsection*{Question 3: Implementation and demonstration (8 points)}
-\texttt{run\_u8076655.py} executes the closed-loop planner. The supplied
-simulator is vendored at revision \texttt{ea3cbfe}; AST checks verify that its
-core dynamics and rewards are unchanged~\cite{provided-code}.
-The planner uses \texttt{get\_config()}, \texttt{simulate()} and
-\texttt{num\_actions}, with separate planning and execution RNGs.
-From the extracted archive's top-level directory:
-\begin{lstlisting}[style=terminal]
+\texttt{run\_u8076655.py} implements B2 using the supplied simulator's
+unchanged dynamics~\cite{provided-code}, with independent planning and
+execution RNGs. From the extracted archive's top-level folder:
+
+\textbf{Reproduction commands.}
+\begin{lstlisting}[style=terminal,keepspaces=true]
+# Dependencies (NumPy, SciPy, PyYAML; Matplotlib only for figures).
 python -m pip install -r requirements.txt
+
+# Complete template; arguments in brackets are optional.
+python run_u8076655.py --config <scenario.yaml> \
+  [--planning-time SECONDS] [--max-simulations K] [--seed SEED] \
+  [--visualize] [--quiet] [--output TRACE.json] \
+  [--variant VARIANT] [--action-mask MASK]
+#   --planning-time    seconds per decision (default 9.5, max 10)
+#   --max-simulations  MCTS trials per decision (default 2000)
+#   --seed             execution seed (default: YAML seed, else 0)
+#   --visualize        Vedo 3D viewer (headless if vedo is missing)
+#   --quiet            no per-step progress lines
+#   --output           save trajectory and search diagnostics (JSON)
+#   --variant          B4 ablation (default full = submitted solver)
+#   --action-mask      B4 command restriction (default full)
+
+# Minimal template (the marking command).
 python run_u8076655.py --config <scenario.yaml>
+
+# Example.
+python run_u8076655.py --config environments/demo_four_3d.yaml --visualize
 \end{lstlisting}
-Each step prints progress; \texttt{--visualize} enables the optional Vedo
-viewer. Planning is serial, with a default 9.5\,s allowance and 2,000-trial
-cap. The clock is checked before every simulator call, with a margin for
-returning the action. Local validation results follow.
+\noindent\begin{minipage}{\linewidth}
+\setlength{\parskip}{4pt}
+Each executed step prints one line to standard error; a JSON summary goes to
+standard output. Excerpt from the open 2D validation run below:
+\begin{lstlisting}[style=terminal,keepspaces=true]
+step   1/80 | 0/1 at goal | reward    -1.0 | plan  9.14s  2000 sims | (1,3,0)
+step   2/80 | 0/1 at goal | reward    -1.0 | plan  8.68s  2000 sims | (2,4,0)
+...
+step  11/80 | 1/1 at goal | reward    99.0 | plan  1.87s  2000 sims | (11,5,0)*
+success: True (success), steps: 11, total discounted reward: 71.74
+\end{lstlisting}
+\end{minipage}
+Planning is serial, with a 9.5\,s allowance and 2,000-trial cap; the
+deadline is checked before each simulator call.
 \input{tables/validation_summary.tex}
 
 \clearpage
@@ -204,11 +209,8 @@ Experimental runs use a relaxed wall-clock cap to isolate search effort.
 The demo instead stops at the first of its time and trial limits, so these
 are different budget protocols. Conditions share execution seeds 0--19
 unless noted, with comparisons paired within each scenario.
-Development layouts were excluded from evaluation. Original run hashes are
-retained in the metadata; subsequent planner patches are checked separately
-before these results are reused: replaying all $\val{EquivTotal}$ reported
-seed-0 episodes with the submitted planner reproduced $\val{EquivIdentical}$
-of them step for step (\texttt{results/planner\_equivalence.json}).
+Development layouts were excluded from evaluation. Only independent
+experimental episodes ran in parallel; planning within each episode was serial.
 
 \begin{table}[H]
 \centering\footnotesize
@@ -240,16 +242,12 @@ one random $8\times6\times3$ layout per pair, ten seeds each. &
 Check performance beyond the factorial and joint growth of state/action spaces. \\
 \bottomrule
 \end{tabularx}
-\caption{Evaluation sets; parentheses give episode counts. A further 360
-regression episodes are listed in Appendix~\ref{app:regression}.}
+\caption{Evaluation sets; parentheses give episode counts.}
 \end{table}
 
-A further 520 search-free runs pair the base policy with the completed
-regression and generated suites (Appendix~\ref{app:regression}). Seven
-supplementary end-to-end cases (280 runs, each paired with the base policy)
-cover solvable fixed-altitude single-drone maps, fixed-altitude drones on
-different layers, and a goal inside a teammate's only corridor
-(Appendix~\ref{app:supplement}).
+A further 360 regression, 520 search-free baseline and 280 supplementary
+runs provide additional validation (Appendix~\ref{app:supplement});
+the complete evaluation contains \val{TotalEpisodes} episodes.
 
 \textbf{Metrics.} With $F$ free cells, there are up to $F^N$ positional
 configurations and $B^N$ joint commands.
@@ -259,16 +257,10 @@ failure. Success proportions have Wilson 95\% intervals; continuous means
 have Student-$t$ intervals $\bar x\pm t_{0.975,n-1}s/\sqrt n$.
 High-minus-low factor effects average the other factors within each seed;
 component effects pair each ablation with the full solver before averaging
-corners. Their 95\% intervals use seed blocks. Full condition means,
-returns and search diagnostics are in Appendix~\ref{app:factorial}--\ref{app:layouts}.
-\input{tables/experiment_environment.tex}
+corners. Their 95\% intervals use seed blocks. Supporting means and
+intervals are in Appendix~\ref{app:details}.
 
 \subsubsection*{S1: effects of the three complexity factors}
-\begin{figure}[H]
-\centering
-\includegraphics[width=0.95\linewidth]{figures/complexity_effects.pdf}
-\caption{Factorial marginal means; bars are 95\% intervals over 20 seed blocks.}
-\end{figure}
 \begin{table}[H]
 \centering\small
 \begin{tabular}{@{}lll@{}}
@@ -277,24 +269,21 @@ returns and search diagnostics are in Appendix~\ref{app:factorial}--\ref{app:lay
 \FactorEffectRows
 \bottomrule
 \end{tabular}
+\caption{Paired factor effects; positive $\Delta L$ indicates degradation.}
 \end{table}
 
 \textbf{Clutter causes the largest degradation within these tested levels.}
-Adding five obstacles raises $L$ by $\val{EffCL}$ steps $\val{EffCLci}$ and
-changes success by $\val{EffCP}$ percentage points $\val{EffCPci}$.
+It is the only factor whose success-effect interval excludes zero.
 The solver succeeds in $\val{FactSuccess}\%$ of S1 episodes; all
 $\val{FactCollisions}$ failures are collisions and none reaches the horizon.
 
 \textbf{State-space padding has little observed effect.}
-For $n_y=10$ versus 20, $\val{SameSTen}$ of $\val{SameSTotal}$ paired
-episodes are identical. The extra off-route cells do not affect these runs;
-this tests padding, not the effect of longer routes or additional drones.
-Mean map setup grows from $\val{SetupS5}$ to $\val{SetupS20}$\,ms
-($n_y=5$ versus 20), outside per-decision planning.
+For $n_y=10$ versus 20, $\val{SameSTen}$ of
+$\val{SameSTotal}$ pairs match in steps, return and outcome.
+This tests off-route padding, not longer routes or additional drones.
 
 \textbf{Richer commands shorten routes.}
-Changing 6 to 26 directions gives $\Delta L=\val{EffAL}$ $\val{EffALci}$;
-the success difference is not statistically resolved.
+Changing 6 to 26 directions reduces $L$; the success difference is unresolved.
 The action--clutter interaction is $\val{IntAC}$ $\val{IntACci}$ steps,
 consistent with diagonal/vertical moves easing obstacle
 avoidance. Neither state-related interaction is resolved
@@ -306,9 +295,7 @@ $\val{ClutterNoisy}$ steps $\val{ClutterNoisyci}$ at $\alpha=0.25$,
 versus $\val{ClutterQuiet}$ $\val{ClutterQuietci}$ at $\alpha=0.01$,
 where all episodes succeed. Thus geometry still adds detour cost, while
 noise substantially increases the observed clutter penalty.
-The supplied transition law raises slip probability near obstacles;
-its no-obstacle distance-transform convention is noted in
-Appendix~\ref{app:guidance}.
+The supplied transition law raises slip probability near obstacles.
 
 Duplicating command labels up to $|A|=10{,}816$ changes $L$ by only
 $\val{Branch}$ $\val{Branchci}$ and leaves the admitted root-action count
@@ -325,17 +312,16 @@ authority in S1. Detailed controls, including the visit share of the
 \caption{Success and $L$ versus simulations per decision; 20 runs per point,
 with Wilson and $t$ 95\% intervals. Drone counts are in parentheses.}
 \end{figure}
-There is no consistent improvement from 16 to 2,000 simulations across
-these four tasks. In the four-drone case, success is
-$\val{BudgetDemoFour3D16}$ and $\val{BudgetDemoFour3D2000}$ respectively,
-while mean new-node depth grows from $\val{BudgetDemoFour3D16Depth}$ to
-$\val{BudgetDemoFour3D2000Depth}$ and the fraction keeping the base action
-falls from $\val{BudgetDemoFour3D16Kept}$ to $\val{BudgetDemoFour3D2000Kept}$.
-Search therefore changes decisions without a demonstrated completion
-benefit here. Overlapping intervals do not establish budget equivalence.
+There is no consistent improvement from 16 to 2,000 simulations.
+For four drones, success is $\val{BudgetDemoFour3D16}$ and
+$\val{BudgetDemoFour3D2000}$ respectively,
+while mean new-node depth increases from $\val{BudgetDemoFour3D16Depth}$ to
+$\val{BudgetDemoFour3D2000Depth}$.
+More search changes the tree without a demonstrated completion benefit
+here; overlapping intervals do not establish budget equivalence.
 
 \input{partB_random.tex}
-\subsubsection*{Conclusions and limitations}
+\subsubsection*{Limitations}
 \input{partB_conclusions.tex}
 \par
 \endgroup

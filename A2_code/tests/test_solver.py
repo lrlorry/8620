@@ -344,6 +344,23 @@ class SolverTests(unittest.TestCase):
         self.assertTrue(json.loads(out.getvalue())['success'])
         self.assertIn('step   1/',err.getvalue());self.assertIn('success: True',err.getvalue())
 
+    def test_outcome_is_reported_before_the_blocking_viewer(self):
+        import run_u8076655
+        events=[]
+        class Viewer(HeadlessMultiDroneUnc):
+            def show(self):events.append('show')
+        original=run_u8076655.make_env
+        def make(path,seed,visualize=False,action_mask='full'):
+            return Viewer(path,seed=seed) if visualize else original(path,seed,action_mask=action_mask)
+        run_u8076655.make_env=make
+        try:
+            result=run_u8076655.run_episode(ROOT/'environments/thin_1d.yaml',planning_time=.01,visualize=True,
+                                            before_viewer=lambda r:events.append(('report',r['success'])))
+        finally:
+            run_u8076655.make_env=original
+        self.assertEqual(events,[('report',True),'show'])
+        self.assertTrue(result['success'])
+
     def test_invalid_configurations_fail_clearly(self):
         changes=[{'alpha':0.}, {'alpha':-1.}, {'discount_factor':1.1}, {'max_num_steps':0},
                  {'grid_size':[0,4,1]}, {'start_positions':[[8,0,0]]},

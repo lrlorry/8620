@@ -1,8 +1,5 @@
-All 34 unit tests pass. A separate exhaustive check of the free
-$2\times2\times1$ two-drone model covers 11 admissible nonterminal
-joint states, 704 state--action pairs and all
-6,048 positive-probability outcomes. Single-process
-runs with the default 9.5-second allowance (seed 0) give:
+All 34 unit tests pass. Local single-process runs with the
+default 9.5-second allowance (seed 0) give:
 
 \begin{table}[H]
 \centering\small
@@ -17,7 +14,3 @@ Four 3D, 5 obstacles & success & 13 & 1,983 & 6.34 & 9.21 \\
 \bottomrule
 \end{tabular}
 \end{table}
-A forced 10-second call with the trial cap raised to 100,000 returns in
-9.699 seconds. On slower hardware the wall-clock
-deadline, not the trial cap, ends the search; these are measurements on one machine,
-not a hard real-time guarantee.

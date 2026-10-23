@@ -38,8 +38,9 @@ def report_step(stream, step, horizon, state, action, reward, stats):
 
 def run_episode(config, seed=None, planning_time=9.5, variant='full',
                 action_mask='full', visualize=False, planner_options=None,
-                time_limit=10., progress=None):
+                time_limit=10., progress=None, before_viewer=None):
     # time_limit stays 10 s for the demo; simulation-capped experiments may raise it.
+    # before_viewer(result) runs before the blocking viewer, as the supplied template prints first.
     if variant not in VARIANTS:
         raise ValueError(f'Unknown solver variant: {variant}')
     if not 0 <= planning_time <= time_limit:
@@ -109,6 +110,8 @@ def run_episode(config, seed=None, planning_time=9.5, variant='full',
         final_state=state.tolist(), trajectory=trajectory, searches=searches,
     )
     if visualize:
+        if before_viewer is not None:
+            before_viewer(result)
         execution.show()
     return result
 
@@ -132,19 +135,28 @@ def main():
         except ImportError:
             sys.stderr.write('vedo is not installed; continuing headless (pip install vedo).\n')
             args.visualize = False
+
+    def publish(result):
+        if args.output:
+            target = Path(args.output)
+            target.parent.mkdir(parents=True, exist_ok=True)
+            target.write_text(json.dumps(result, indent=2) + '\n')
+        concise = {k:v for k,v in result.items() if k not in ('trajectory','searches','final_state')}
+        if not args.quiet:
+            sys.stderr.write(f"success: {result['success']} ({result['termination']}), steps: {result['steps']}, "
+                             f"total discounted reward: {result['discounted_return']:.2f}\n")
+            if args.visualize:
+                sys.stderr.write('Viewer is interactive; close the window (or press q) to exit.\n')
+            sys.stderr.flush()
+        print(json.dumps(concise, indent=2), flush=True)
+
     result = run_episode(args.config, args.seed, args.planning_time, args.variant,
                          args.action_mask, args.visualize,
                          {'max_simulations': 0 if args.variant == 'heuristic' else args.max_simulations},
-                         progress=None if args.quiet else sys.stderr)
-    if args.output:
-        target = Path(args.output)
-        target.parent.mkdir(parents=True, exist_ok=True)
-        target.write_text(json.dumps(result, indent=2) + '\n')
-    concise = {k:v for k,v in result.items() if k not in ('trajectory','searches','final_state')}
-    if not args.quiet:
-        sys.stderr.write(f"success: {result['success']} ({result['termination']}), steps: {result['steps']}, "
-                         f"total discounted reward: {result['discounted_return']:.2f}\n")
-    print(json.dumps(concise, indent=2))
+                         progress=None if args.quiet else sys.stderr,
+                         before_viewer=publish if args.visualize else None)
+    if not args.visualize:
+        publish(result)
 
 
 if __name__ == '__main__':

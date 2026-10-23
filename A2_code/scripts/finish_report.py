@@ -20,19 +20,12 @@ def main():
         r=measured['default_demos'][name]
         rows.append(f"{label} & {r['termination']} & {r['steps']} & {r['simulations']/max(1,r['steps']):,.0f} "
                     f"& {r['mean_plan_seconds']:.2f} & {r['max_plan_seconds']:.2f}"+r' \\')
-    text=(f"All {measured['unit_tests']} unit tests pass. A separate exhaustive check of the free\n"
-          f"$2\\times2\\times1$ two-drone model covers {small['joint_states']} admissible nonterminal\n"
-          f"joint states, {small['state_action_pairs']} state--action pairs and all\n"
-          f"{small['positive_probability_outcomes']:,} positive-probability outcomes. Single-process\n"
-          "runs with the default 9.5-second allowance (seed 0) give:\n\n"
+    text=(f"All {measured['unit_tests']} unit tests pass. Local single-process runs with the\n"
+          "default 9.5-second allowance (seed 0) give:\n\n"
           "\\begin{table}[H]\n\\centering\\small\n"
           "\\begin{tabular}{@{}llrrrr@{}}\n\\toprule\n"
           "Task & Status & Steps & Sims/step & Mean (s) & Max (s) \\\\\n\\midrule\n"+
-          '\n'.join(rows)+"\n\\bottomrule\n\\end{tabular}\n\\end{table}\n"
-          f"A forced 10-second call with the trial cap raised to 100,000 returns in\n"
-          f"{measured['forced_10s_check']['measured_elapsed']:.3f} seconds. On slower hardware the wall-clock\n"
-          "deadline, not the trial cap, ends the search; these are measurements on one machine,\n"
-          "not a hard real-time guarantee.\n")
+          '\n'.join(rows)+"\n\\bottomrule\n\\end{tabular}\n\\end{table}\n")
     (REPORT/'tables/validation_summary.tex').write_text(text)
     architecture=software['architecture'].replace('_',r'\_')
     environment=(f"Episodes ran on {software['os'].replace('_',r'\_')} (\\texttt{{{architecture}}}), Python {software['python']},\n"

@@ -1,7 +1,7 @@
-\section{Algorithm details and model conventions}
+\subsection{Algorithm definitions}
 \label{app:guidance}
-For an in-grid cell $q$, let $\mathcal N(q)$ be its physical neighbours
-and $V(q)=|\mathcal N(q)|$. For a command towards a free in-grid neighbour,
+For a free in-grid target command, let $\mathcal N(q)$ be the physical
+neighbours of $q$ and $V(q)=|\mathcal N(q)|$. The supplied motion law gives
 \[
  \begin{aligned}
  \pi(q)&=\frac{d(q)}{d(q)+\alpha},&
@@ -10,50 +10,36 @@ and $V(q)=|\mathcal N(q)|$. For a command towards a free in-grid neighbour,
  \sigma(q)&=\frac{1-\pi(q)}{(B-1)M(q)}.
  \end{aligned}
 \]
-The obstacle-slip surrogate is
-$\rho(q)=|\mathcal N(q)\cap O|\sigma(q)$.
-Dijkstra costs use $1+\lambda\rho(q)$ for entry into a non-goal cell and
-1 for entry into the goal, where
+Dijkstra entry costs are $1+\lambda\rho(q)$ for a non-goal cell and 1 for
+the goal, where
 \[
+ \rho(q)=|\mathcal N(q)\cap O|\sigma(q),\qquad
  \lambda=\frac{w(G+|C|)}
- {\max\{|c_{\mathrm{step}}|,\ 10^{-3}(G+|C|),\ 10^{-9}\}},\qquad w=1.
+ {\max\{|c_{\mathrm{step}}|,10^{-3}(G+|C|),10^{-9}\}},\quad w=1.
 \]
-With $w=0$, costs reduce to physical breadth-first distances.
-At most 150,000 grid cells are mapped; larger grids use a Chebyshev-distance
-fallback without risk maps. Frozen-goal connectivity checks are cached
-by drone and reached subset on maps of at most 20,000 cells; larger maps
-retain the static-distance estimate.
+With $w=0$, these are breadth-first distances. The supplied empty-map
+distance transform uses a virtual point beyond the grid corner, so slips
+remain possible without obstacles.
 
-Grid boundaries are not obstacles. With no obstacles, the supplied
-SciPy distance transform measures distance to a virtual point beyond a
-grid corner, rather than returning infinity, so slips remain possible.
-On an obstacle hit, the simulator retains the drone's old cell but returns
-a terminal flag. The model in B1 maps that outcome to $\bot$; its sampled
-reward is computed before this mapping. Joint commands are encoded
-little-endian, $a=\sum_i a_iB^{i-1}$.
-
-At a rollout cutoff after $L$ sampled steps, the normalised return is
+A rollout cut off after $L$ sampled steps returns
 \[
- \sum_{j=0}^{L-1}\gamma^j\frac{r_j}{\kappa}
- +\gamma^L\frac{\widehat V(s_L,h-L)}{\kappa},
+ \sum_{j=0}^{L-1}\gamma^j r_j/\kappa+
+ \gamma^L\widehat V(s_L,h-L)/\kappa,
 \]
-with zero continuation on terminal outcomes. For a backed-up sample $v$,
-Welford's edge update is
+with zero continuation on termination. For an edge sample $v$, update
 \[
  n\gets n+1,\quad \Delta\gets v-Q,\quad
  Q\gets Q+\Delta/n,\quad S\gets S+\Delta(v-Q).
 \]
-The pooled root variance is
-$\hat\sigma^2=\sum_a S_a/\sum_a(n_a-1)$ over visited actions, or zero
-if the denominator is zero. This is a sample-based heuristic variance
-estimate, not a confidence guarantee.
+The pooled root variance is $\hat\sigma^2=\sum_a S_a/\sum_a(n_a-1)$ over
+visited actions, or zero when the denominator is zero.
 
-\section{Factorial condition results}
+\subsection{Factorial results}
 \label{app:factorial}
 \begin{table}[H]
-\centering\small
-\caption{All 27 S1 conditions ($n=20$ each). Continuous entries are mean
-$\pm$95\% interval half-width; Calls counts simulator calls per decision.}
+\centering\footnotesize
+\caption{All 27 S1 conditions, $n=20$ each. $L$ and Return: mean
+$\pm$95\% interval half-width; Calls: mean simulator calls per decision.}
 \begin{tabular}{@{}rrrcrrr@{}}
 \toprule $n_y$ & $|A|$ & $|O|$ & Success & $L$ & Return & Calls \\
 \midrule
@@ -62,15 +48,14 @@ $\pm$95\% interval half-width; Calls counts simulator calls per decision.}
 \end{tabular}
 \end{table}
 
-\section{Mechanism controls}
+\subsection{Mechanism controls}
 \label{app:controls}
-The 6/18/26-command conditions restrict intended directions only; the
-physical slip law retains all 26 neighbours. Duplicated labels map to the
-same physical commands and do not introduce additional slip outcomes.
+Command masks restrict intended directions; the physical slip law retains
+all 26 neighbours. Duplicated labels leave the physical commands unchanged.
 \begin{table}[H]
 \centering\footnotesize
-\caption{S2 clutter controls ($n_y=10$, $n=20$ per row).
-$L$: mean $\pm$95\% interval half-width; Obst./Veh.: collision episodes.}
+\caption{S2 clutter controls ($n_y=10$, $n=20$). $L$: mean $\pm$95\% interval
+half-width; Obst./Veh.: collision episodes.}
 \begin{tabular}{@{}llrcrrr@{}}
 \toprule Commands & $\alpha$ & $|O|$ & Success & $L$ & Obst. & Veh. \\
 \midrule
@@ -80,10 +65,9 @@ $L$: mean $\pm$95\% interval half-width; Obst./Veh.: collision episodes.}
 \end{table}
 \begin{table}[H]
 \centering\footnotesize
-\caption{Duplicated command labels with unchanged physics
-($n_y=10$, $|O|=2$, $n=20$). Root: admitted actions;
-Selected: visit share of the executed root action, which need not be the
-most-visited action. $L$: mean $\pm$95\% interval half-width.}
+\caption{Duplicated labels ($n_y=10$, $|O|=2$, $n=20$).
+Root: admitted actions; Selected: visit share of the executed action.
+$L$: mean $\pm$95\% interval half-width.}
 \begin{tabular}{@{}lrcrrr@{}}
 \toprule Labels & $|A|$ & Success & $L$ & Root & Selected (\%) \\
 \midrule
@@ -92,29 +76,54 @@ most-visited action. $L$: mean $\pm$95\% interval half-width.}
 \end{tabular}
 \end{table}
 
-\section{Search-budget results}
-\label{app:budget}
+\subsection{Component effects}
+\label{app:components}
 \begin{table}[H]
-\centering\small
-\caption{S4 ($n=20$ per row). $L$: mean $\pm$95\% interval half-width;
-Root: admitted actions; Depth: mean depth of newly created nodes.}
-\begin{tabular}{@{}lrcrrr@{}}
-\toprule Task (drones) & Sims & Success & $L$ & Root & Depth \\
+\centering\footnotesize
+\caption{Paired S3 effects. Overall changes include 95\% intervals;
+factor columns give low/high-level means. $^\ast$: interaction interval
+excludes zero. Uniform proposals: ten seeds; others: twenty.}
+\resizebox{\linewidth}{!}{%
+\begin{tabular}{@{}lllccc@{}}
+\toprule Variant & $\Delta L$ & $\Delta$success (pp) & $n_y$ 5 / 20 & $|A|$ 36 / 676 & $|O|$ 0 / 5 \\
 \midrule
-\BudgetRows
+\ComponentRows
+\bottomrule
+\end{tabular}}
+\end{table}
+
+\subsection{Additional validation}
+\label{app:regression}
+\label{app:supplement}
+Among $\val{BaseMultiPairs}$ feasible multi-drone regression/generated pairs,
+search succeeds in $\val{BaseMultiFull}$ versus $\val{BaseMultiGreedy}$;
+removing search changes $L$ by $\val{BaseMultiDL}$ $\val{BaseMultiDLci}$.
+These exploratory intervals pool episode differences across layouts.
+The supplementary cases below include fixed-altitude single-drone maps,
+separate altitude layers and a goal inside a teammate's corridor.
+Wall-gap and corridor cases use seven/eight obstacles, beyond the demo's
+five-obstacle range. No timeout occurred; all failures were collisions.
+\begin{table}[H]
+\centering\footnotesize
+\caption{Supplementary cases ($n=20$ per policy). No search: paired base
+policy; Obst./Veh./T.o.: full-solver failure counts.
+$L$: mean $\pm$95\% interval half-width.}
+\begin{tabular}{@{}lcccrrrr@{}}
+\toprule Case & Success & Wilson 95\% (\%) & No search & Obst. & Veh. & T.o. & $L$ \\
+\midrule
+\SupplementRows
 \bottomrule
 \end{tabular}
 \end{table}
 
-\section{Generated-layout results}
+\subsection{Generated-layout results}
 \label{app:layouts}
 \begin{table}[H]
-\centering\small
+\centering\footnotesize
 \caption{S5 marginals: four layouts $\times$ ten seeds per level.
-$L$: mean $\pm$95\% interval half-width; Depth: mean new-node depth.
-One layout per $(N,\alpha)$ pair limits inference beyond these layouts.}
+$L$: mean $\pm$95\% interval half-width; Depth: mean new-node depth.}
 \begin{tabular}{@{}llcrrr@{}}
-\toprule Factor & Level & Success & Wilson 95\% CI (\%) & $L$ & Depth \\
+\toprule Factor & Level & Success & Wilson 95\% (\%) & $L$ & Depth \\
 \midrule
 \RandomRows
 \bottomrule

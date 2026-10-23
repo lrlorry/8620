@@ -35,7 +35,9 @@ python run_u8076655.py --config environments/demo_four_3d.yaml \
 
 Headless dependencies are NumPy, SciPy and PyYAML; Matplotlib is needed only to
 regenerate report figures. `--visualize` uses the supplied Vedo viewer; if
-`vedo` is not installed the run continues headless with a warning.
+`vedo` is not installed the run continues headless with a warning. As in the
+supplied template, the result is printed before the viewer turns interactive;
+close the window (or press `q`) to exit.
 
 ```bash
 python -m pip install -r requirements.txt
@@ -143,8 +145,19 @@ python scripts/analyse_results.py
 python scripts/release_validation.py      # single process: tests, demos, 10 s check
 python scripts/verify_equivalence.py --workers 12   # replay reported seed-0 episodes
 python scripts/probe_risk_leaf.py --workers 12      # exploratory risk-charged leaf probe
-python scripts/plot_risk_maps.py                    # guidance heatmaps (report Figure 1)
+python scripts/plot_risk_maps.py                    # archived guidance heatmaps
+python scripts/plot_scenario_gallery.py             # saved paths, timings and report appendix
 ```
+
+The scenario gallery reads stored seed-0 full-solver traces without running
+the planner. It covers all 76 non-development manifest entries plus the
+supplied example. Individual PNGs and a source/hash index are written to
+`results/visualisations/`; the complete PDF and three sheets of twelve
+representative cases are written to the report directory. Default-budget
+demo timings are labelled separately from fixed-simulation experiments
+with relaxed deadlines. Crosses mark unfinished drones' returned terminal
+positions; raw collision targets are not logged. Single traces illustrate
+behaviour rather than replace the repeated-run statistics.
 
 The reported design has 3,300 episodes (360 regression, 160 generated,
 540 factorial, 880 component, 400 budget, 160 control, 520 search-free

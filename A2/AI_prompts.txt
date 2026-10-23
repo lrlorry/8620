@@ -772,3 +772,117 @@ Tool: OpenAI Codex
 Purpose: Remove generated caches and upload the current assignment sources, results and report to GitHub.
 Prompt (verbatim):
 清除中间缓存文件 然后上传到github
+
+
+Tool: OpenAI Codex
+Purpose: Shorten Part B and its appendices, remove unrequired engineering/development detail and repeated tables, preserve required modelling, pseudocode and empirical evidence, and rebuild the report.
+Prompt (verbatim):
+报告里哪些部分是冗余没必要加的  可以删了
+
+Follow-up prompt (verbatim):
+主要是partB部分 20页 有些内容 如果没有要求 是不是可以删了
+
+Tool: Anthropic Claude Code (Claude Opus 5.5)
+Purpose: Add A1-style reproduction commands (complete template, minimal template, example) and an example of the program output to Part B Question 3.
+Prompt (verbatim):
+part B 第三问 演示部分。你给个按照A1report 下面给上例子好吗
+
+
+Tool: OpenAI Codex
+Purpose: Explain whether a separate bibliography is required; inspect the assignment and existing citations.
+Prompt (verbatim):
+References 是不是也能完全删了 作业没有要求吧
+
+
+Tool: OpenAI Codex
+Purpose: Verify runtime output and visualization support; draw the saved default-budget four-drone trace and per-step timing preview.
+Prompt (verbatim):
+Your program has up to 10 seconds planning time per step with no paralleli-
+sation to solve a given problem. Each solved problem is worth 4 points.
+The test case we expect you to do well on will have less than 50 discrete actions, but we do have a
+challenge problem, which we can give if you are interested :) 你有没有打印结果啊 比如耗时。还有可视化的结果
+
+
+Tool: OpenAI Codex
+Purpose: Generate saved trajectory/timing plots for evaluation scenarios, add representative cases as the last appendix, retain all configurations in a separate gallery, and label budget protocols accurately.
+Prompt (verbatim):
+这种可视化的结果 话说能不能每种场景都生成一下 补充在最后的附录里 你觉得呢
+
+Follow-up clarification (verbatim):
+代表性场景类型，每类一图（推荐）
+
+Tool: Anthropic Claude Code (Claude Opus 5.5)
+Purpose: Ask whether decision times above 10 s in the experiment records conflict with the 10-second planning limit (assignment text pasted).
+Prompt (verbatim, including the pasted assignment text):
+我好奇 题目不是说 
+
+Your program has up to 10 seconds planning time per step with no paralleli-
+sation to solve a given problem. Each solved problem is worth 4 points.
+The test case we expect you to do well on will have less than 50 discrete actions, but we do have a
+challenge problem, which we can give if you are interested :)
+
+ 但是显示的 execute step很多超过10s 不会有问题吗
+
+Tool: Anthropic Claude Code (Claude Opus 5.5)
+Purpose: Ask what the assignment says about demo duration.
+Prompt (verbatim):
+题目要求 演示的时候时长是啥
+
+Tool: Anthropic Claude Code (Claude Opus 5.5)
+Purpose: Ask for a locally runnable demo command with correct paths.
+Prompt (verbatim):
+python run_u8076655.py --config environments/demo_four_3d.yaml --visualize 这个 给一个我本地能跑的命令 路径写对了 我手动跑一下
+
+Tool: Anthropic Claude Code (Claude Opus 5.5)
+Purpose: Ask whether the lab's Ubuntu machines have Vedo installed.
+Prompt (verbatim):
+学校 ubuntu的机器有没有装vedo
+
+Tool: Anthropic Claude Code (Claude Opus 5.5)
+Purpose: Ask about Vedo's size and suggest installing it to test.
+Prompt (verbatim):
+vedo 大吗 为啥不装一下试试
+
+Tool: Anthropic Claude Code (Claude Opus 5.5)
+Purpose: Approve installing Vedo locally (vedo 2026.6.1, VTK 9.7.1) and testing the viewer.
+Prompt (verbatim):
+你就先装吧 明天我去机房下载代码跑一下
+
+Tool: Anthropic Claude Code (Claude Opus 5.5)
+Purpose: Ask whether a run takes the full step limit (80 steps x 10 s).
+Prompt (verbatim):
+80 step吗 那不是要800s  演示会给这么多时间吗
+
+Tool: Anthropic Claude Code (Claude Opus 5.5)
+Purpose: Ask what the grey and green boxes mean in the Vedo viewer (a screenshot of the four-drone demo was attached).
+Prompt (verbatim):
+[screenshot of the Vedo viewer] 这里面的灰色 绿色是啥
+
+Tool: Anthropic Claude Code (Claude Opus 5.5)
+Purpose: Ask whether a run had finished (pasted progress output).
+Prompt (verbatim, including the pasted output):
+,3,3) (6,6,0) (4,7,2)
+step   7/80 | 0/4 at goal | reward    -4.0 | plan  7.20s  2000 sims | (7,0,3) (7,2,3) (7,7,1) (5,7,1)
+step   8/80 | 0/4 at goal | reward    -4.0 | plan  6.15s  2000 sims | (8,0,2) (8,3,2) (8,6,0) (6,6,0)
+step   9/80 | 0/4 at goal | reward    -4.0 | plan  4.64s  2000 sims | (9,1,2) (9,3,2) (9,5,1) (7,6,0)
+step  10/80 | 0/4 at goal | reward    -4.0 | plan  3.72s  2000 sims | (10,1,2) (10,3,2) (10,5,1) (8,7,0)
+step  11/80 | 3/4 at goal | reward   296.0 | plan  3.14s  2000 sims | (11,1,2)* (11,3,2)* (11,5,1)* (9,7,1)
+step  12/80 | 3/4 at goal | reward    -4.0 | plan  3.18s  2000 sims | (11,1,2)* (11,3,2)* (11,5,1)* (10,6,1)
+step  13/80 | 4/4 at goal | reward    96.0 | plan  2.64s  2000 sims | (11,1,2)* (11,3,2)* (11,5,1)* (11,6,1)*
+
+ 这是跑完了？
+
+Tool: Anthropic Claude Code (Claude Opus 5.5)
+Purpose: Ask why the result is printed only after the viewer window closes.
+Prompt (verbatim):
+为啥关键窗口才打印 success
+
+Tool: Anthropic Claude Code (Claude Opus 5.5)
+Purpose: Ask why the output order differs from the supplied template.
+Prompt (verbatim):
+你为啥不按老师的来
+
+Tool: Anthropic Claude Code (Claude Opus 5.5)
+Purpose: Approve printing the result before the interactive viewer, as in the supplied template.
+Prompt (verbatim):
+改

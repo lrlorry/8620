@@ -436,159 +436,18 @@ destinations to select driving actions.
 
 \clearpage
 \appendix
-\section{Prompt log and source inventory}
-\label{app:ai-prompts}
-\noindent The archive's top-level folder is \texttt{u8076655\_A2\_code}; the file
-\texttt{AI\_prompts.txt} records the original-language prompts.
-
-\begin{table}[H]
-\centering\small
-\begin{tabularx}{\linewidth}{@{}lX@{}}
-\toprule File/folder & Purpose \\
-\midrule
-\texttt{run\_u8076655.py} & Demo entry point, closed-loop execution and progress output. \\
-\texttt{planner.py} & Risk-aware budgeted UCT, guidance maps, leaf values and diagnostics. \\
-\texttt{environment.py} & Headless hooks, input checks and experimental action masks. \\
-\texttt{multi\_drone*.py} & Supplied simulator and configuration class (unchanged core). \\
-\texttt{experiments.py} & Simulation-capped, resumable experiment runner. \\
-\texttt{tests/} & Unit tests for model semantics, guidance and planning behaviour. \\
-\texttt{environments/} & All 92 scenario entries (\texttt{dev/}: development set) and the manifest. \\
-\texttt{results/} & Raw data, provenance, verification and seed-0 traces (\texttt{dev/}: tuning). \\
-\texttt{scripts/} & Scenario generation, experiments, analysis, validation and packaging. \\
-\texttt{report/} & LaTeX sources, generated tables and figures. \\
-\bottomrule
-\end{tabularx}
-\end{table}
-
-\section{Development-set parameter selection}
-\label{app:tuning}
-Sixteen development layouts (\texttt{environments/dev/}: $10\times10\times5$
-or $10\times10\times1$ grids, 1--4 drones crossed with
-$\alpha\in\{0.25,0.5,1,2\}$, 0--5 random obstacles, generator seed 4620) were
-used with ten seeds and 500 simulations per decision, before any reported
-experiment; none of them appears in Question~4. Round~1 varied the risk
-weight $w$ and $c_{\mathrm{UCT}}$ under the then most-visited choice and widening $1.5$;
-round~2 varied the anchored choice. Differences are paired against the
-adopted setting (\texttt{anchor\_z1\_w0.5}), averaged over layouts within each
-seed ($n=10$ blocks). Selecting the best of twelve settings on these layouts
-is optimistic for them, which is why all reported results use other
-scenarios.
-
-\begin{table}[H]
-\centering\footnotesize
-\caption{Development-set results ($n=160$ episodes per setting). Obst./Veh.:
-episodes ending in obstacle / inter-drone collisions.}
-\begin{tabular}{@{}clrrrrrr@{}}
-\toprule Rd. & Setting & Success & Obst. & Veh. & $L$ & $\Delta$success (pp) & $\Delta L$ \\
-\midrule
-\TuningRows
-\bottomrule
-\end{tabular}
-\end{table}
-
-\section{Component results by factorial corner}
-\label{app:components}
-\begin{table}[H]
-\centering\footnotesize
-\caption{Paired component effects at the eight S1 corners. Entries give
-mean changes with 95\% intervals; factor columns show low/high-level means.
-$^\ast$ marks an interaction whose interval excludes zero.}
-\resizebox{\linewidth}{!}{%
-\begin{tabular}{@{}lllccc@{}}
-\toprule Variant & $\Delta L$ & $\Delta$success (pp) & $n_y$ 5 / 20 & $|A|$ 36 / 676 & $|O|$ 0 / 5 \\
-\midrule
-\ComponentRows
-\bottomrule
-\end{tabular}}
-\end{table}
-
-\begin{table}[H]
-\centering\footnotesize
-\caption{Successes per corner (full solver: factorial runs, $n=20$; uniform
-proposals: $n=10$; other variants: $n=20$). Corner labels give $n_y$, intended
-directions per drone and obstacle count.}
-\begin{tabular}{@{}lcccccccc@{}}
-\toprule Variant & 5/6/0 & 5/6/5 & 5/26/0 & 5/26/5 & 20/6/0 & 20/6/5 & 20/26/0 & 20/26/5 \\
-\midrule
-\ComponentRawRows
-\bottomrule
-\end{tabular}
-\end{table}
-
-\section{Regression coverage}
-\label{app:regression}
-The 18 named scenarios each use 20 seeds and a fixed cap of 2{,}000
-simulations per decision. ``No search'' is the search-free base policy on the same
-seeds (baseline suite). Infeasible cases and the one-step horizon case are
-expected failures; stochastic collisions in feasible cases remain recorded
-failures.
-
-Across feasible episodes with at least one executed step in the regression
-and generated suites, there are $\val{BaseMultiPairs}$ multi-drone pairs:
-the full solver succeeds in $\val{BaseMultiFull}$ and the base policy in
-$\val{BaseMultiGreedy}$. Search rescues $\val{BaseMultiRescued}$ episodes
-and loses $\val{BaseMultiLost}$. Removing search changes $L$ by
-$\val{BaseMultiDL}$ $\val{BaseMultiDLci}$.
-The $\val{BaseSinglePairs}$ single-drone pairs have
-$\val{BaseSingleFull}$ successes under each policy
-($\Delta L=\val{BaseSingleDL}$ $\val{BaseSingleDLci}$).
-These exploratory intervals pool paired episode differences across layouts;
-they are not the seed-block intervals used for S1--S3 and do not establish
-an advantage for search.
-
-\begin{table}[H]
-\centering\small
-\caption{Named regression scenarios. $L$ shows mean $\pm$95\% CI half-width;
-its failure penalty is the scenario's own step limit.}
-\begin{tabular}{@{}lcccrrr@{}}
-\toprule Scenario & Success & No search & Obst. & Veh. & $L$ & Calls/step \\
-\midrule
-\RegressionRows
-\bottomrule
-\end{tabular}
-\end{table}
-
-\section{Supplementary end-to-end cases}
-\label{app:supplement}
-These cases fill gaps in the main suites: solvable fixed-altitude single-drone
-maps (only the infeasible wall case was in the regression suite), fixed-altitude
-drones on different layers (the setting of the same-layer slip neighbourhood),
-and a drone whose goal lies inside a teammate's only corridor. Each runs 20
-seeds at 2{,}000 simulations per decision, paired with the search-free base
-policy (\texttt{results/supplement.csv}). The full solver succeeds in
-$\val{SuppFull}$ runs and the base policy in $\val{SuppGreedy}$; there are
-$\val{SuppTimeouts}$ timeouts, so no run deadlocked, and every failure is a
-slip collision. The two weaker cases force passages beside obstacles: a
-one-cell gap in a wall at $\alpha=0.5$ and a corridor lined with obstacles.
-
-\begin{table}[H]
-\centering\footnotesize
-\caption{Supplementary cases ($n=20$ each; fixed altitude). No search: the
-base policy on the same seeds. Obst./Veh./T.o.: obstacle-collision,
-inter-drone-collision and timeout episodes of the full solver. $L$: mean
-$\pm$95\% half-width.}
-\begin{tabular}{@{}lcccrrrr@{}}
-\toprule Case & Success & Wilson 95\% (\%) & No search & Obst. & Veh. & T.o. & $L$ \\
-\midrule
-\SupplementRows
-\bottomrule
-\end{tabular}
-\end{table}
-
+\section{Supporting definitions and results}
+\label{app:details}
+Complete regression, budget and tuning data remain in the source archive.
+The six original evaluation suites retain their generating hashes;
+all \val{EquivTotal} original seed-0 traces replay identically with the
+current planner (\texttt{results/planner\_equivalence.json}).
+Baseline and supplementary runs use the current planner directly.
 \input{partB_details.tex}
 
-\clearpage
 \begin{thebibliography}{9}
 \bibitem{mdp-lectures}
 H. Kurniawati, \textit{Week 5: MDP Solving; Week 6: MDP Solving (continued)},
-COMP4620/8620 lecture materials, Australian National University, 2026.
-
-\bibitem{tutorials}
-H. Kurniawati, \textit{Tutorials Weeks 6, 8 and 9}, COMP4620/8620,
-Australian National University, 2026.
-
-\bibitem{rl-lectures}
-H. Kurniawati, \textit{Reinforcement Learning, Weeks 8--11},
 COMP4620/8620 lecture materials, Australian National University, 2026.
 
 \bibitem{kocsis2006}
@@ -606,5 +465,8 @@ RDLLab, \textit{MultiDroneUnc}, supplied code and README,
 Local revision \texttt{ea3cbfe}; full revision and source hashes are recorded
 in \texttt{UPSTREAM.json}.
 \end{thebibliography}
+
+\clearpage
+\input{partB_visualisations.tex}
 
 \end{document}
