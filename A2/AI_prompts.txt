@@ -886,3 +886,15 @@ Tool: Anthropic Claude Code (Claude Opus 5.5)
 Purpose: Approve printing the result before the interactive viewer, as in the supplied template.
 Prompt (verbatim):
 改
+
+
+Tool: OpenAI Codex
+Purpose: Remove the References section and citation markers, rebuild the PDF, and independently audit Part B against the assignment requirements and current code/data.
+Prompt (verbatim):
+References 删了 并且重新审核 partB能不能达到满分要求
+
+
+Tool: OpenAI Codex
+Purpose: Explain the choice of 2D or 3D views based on allowed altitude changes and distinct height layers.
+Prompt (verbatim):
+为啥 有的是三维 有的 二维

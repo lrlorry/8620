@@ -2,6 +2,7 @@
 
 import json
 from pathlib import Path
+import re
 ROOT=Path(__file__).resolve().parents[1]
 REPORT=next((p for p in (ROOT/'report',ROOT.parent/'A2')
              if (p/'u8076655_A2_report.tex').exists()),ROOT/'report')
@@ -15,12 +16,15 @@ def main():
     summary=json.loads((ROOT/'results/summary.json').read_text())
     software=json.loads((ROOT/'results/software_environment.json').read_text())
     assert summary['total_episodes']==3300 and small['passed']
+    test_log=(ROOT/'results/unit_tests.log').read_text()
+    test_count=re.search(r'Ran (\d+) tests',test_log)
+    assert test_count and test_log.rstrip().endswith('OK'), 'Unit-test log must record a passing run'
     rows=[]
     for name,label in LABELS:
         r=measured['default_demos'][name]
         rows.append(f"{label} & {r['termination']} & {r['steps']} & {r['simulations']/max(1,r['steps']):,.0f} "
                     f"& {r['mean_plan_seconds']:.2f} & {r['max_plan_seconds']:.2f}"+r' \\')
-    text=(f"All {measured['unit_tests']} unit tests pass. Local single-process runs with the\n"
+    text=(f"All {test_count.group(1)} unit tests pass. Local single-process runs with the\n"
           "default 9.5-second allowance (seed 0) give:\n\n"
           "\\begin{table}[H]\n\\centering\\small\n"
           "\\begin{tabular}{@{}llrrrr@{}}\n\\toprule\n"

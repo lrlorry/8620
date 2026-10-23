@@ -4,7 +4,7 @@
 \input{tables/component_rows.tex}
 \input{tables/clutter_control_rows.tex}
 \input{tables/branch_control_rows.tex}
-\input{tables/random_rows.tex}
+\input{tables/random_case_rows.tex}
 \input{tables/supplement_rows.tex}
 \section*{Part B: Multi-drone planning under uncertainty (35 points)}
 \begingroup
@@ -32,8 +32,8 @@ There is no hover action; reached drones ignore their commands.
 normalised single-drone target law (Appendix~\ref{app:guidance}).
 For a reached drone, $q_i(y_i\mid p_i,1,a_i)=\mathbf1\{y_i=p_i\}$.
 Raw targets $y=(y_1,\ldots,y_N)$ are conditionally independent.
-Let $F(s,y)$ apply the simulator's position and flag updates and return
-$\bot$ on termination. Then
+Let $F(s,y)$ update positions and flags, increment $t$, and return $\bot$
+on termination. Then
 \[
  T(s,a,s')=\sum_{y:F(s,y)=s'}\prod_{i=1}^{N}
  q_i(y_i\mid p_i,r_i,a_i),\qquad T(\bot,a,\bot)=1.
@@ -58,7 +58,7 @@ The terminal transition receives its reward before absorption. The objective is
 This encourages fast completion and penalises collisions.
 
 \subsection*{Question 2: Approximate online solver (4 points)}
-I use UCT/MCTS with progressive widening~\cite{mdp-lectures,kocsis2006,couetoux2011},
+I use UCT/MCTS with progressive widening,
 re-planned after every executed step. The supplied generative model samples
 outcomes without enumerating the state space or all $26^4=456{,}976$ joint
 actions.
@@ -76,12 +76,13 @@ probabilities, and $\lambda$ converts collision loss into step-cost units
 (Appendix~\ref{app:guidance}). The last term is an inter-drone risk surrogate.
 $\mathcal N$ contains physical neighbours at the allowed altitude.
 Out-of-grid and obstacle targets receive prohibitive costs; frozen or
-already reserved cells receive $10^9$.
+already reserved targets incur an additional $10^9$.
 \textsc{Greedy} processes drones in index order and minimises this score;
 \textsc{Sample} uses random order and samples among the four cheapest
 commands within $1.05$ of the minimum, with weights $e^{-3(\mathrm{score}-\min)}$.
 \textsc{Explore} samples uniformly from free, in-grid, unreserved targets
 when available.
+
 \textbf{The four MCTS components.}
 \begin{enumerate}[label=(\arabic*),itemsep=2pt]
 \item \textbf{Selection.} Try unvisited admitted actions first; otherwise maximise
@@ -92,6 +93,7 @@ when available.
 Returns are normalised by $\kappa=\max\{1,N(G+2|C|)\}$.
 \item \textbf{Expansion.} The action limit is
 $\min\{\lceil0.5\sqrt{N(s)+1}\rceil,\prod_{i:r_i=0}|U_i^{\mathrm{adm}}|\}$.
+Here $U_i^{\mathrm{adm}}$ contains commands towards free, in-grid neighbours.
 Admit \textsc{Greedy} first, then \textsc{Explore} with probability $0.15$
 and \textsc{Sample} otherwise (at most 12 attempts for a new action).
 Each distinct sampled successor has its own child.
@@ -155,8 +157,8 @@ The planner tracks the remaining horizon because \texttt{simulate} does
 not enforce the execution step limit.
 
 \subsection*{Question 3: Implementation and demonstration (8 points)}
-\texttt{run\_u8076655.py} implements B2 using the supplied simulator's
-unchanged dynamics~\cite{provided-code}, with independent planning and
+\texttt{run\_u8076655.py} implements B2 using the supplied MultiDroneUnc
+simulator's unchanged dynamics, with independent planning and
 execution RNGs. From the extracted archive's top-level folder:
 
 \textbf{Reproduction commands.}

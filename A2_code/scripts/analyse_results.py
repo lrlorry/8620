@@ -288,6 +288,13 @@ def analyse_controls(control,factorial,numbers,summary):
 
 
 def analyse_random(rows,numbers,summary):
+    cases=[]
+    for (n,alpha),cell in sorted(grouped(rows,('N','alpha')).items()):
+        x=summarize(cell);s=x['success']
+        cases.append([n,f'{alpha:g}',count(x),
+                      f"[{100*s['lower']:.0f}, {100*s['upper']:.0f}]",
+                      fmt(x['penalized_steps']),f"{x['mean_new_depth']['mean']:.2f}"])
+    latex_rows('random_case_rows',cases)
     table=[]
     for label,field,values in [('Drones $N$','N',(1,2,3,4)),('Noise $\\alpha$','alpha',(.05,.25,1.,2.))]:
         for v in values:
