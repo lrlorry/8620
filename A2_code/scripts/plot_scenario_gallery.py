@@ -45,7 +45,7 @@ TITLES = {
     'horizon_one': 'One-step horizon',
     'narrow_passage': 'Two-drone narrow passage',
     'altitude_detour': 'Altitude detour',
-    'three_3d': 'Three drones: collision',
+    'three_3d': 'Three drones in 3D',
     'four_2d': 'Four drones in 2D',
     'supp_single_example_2d': 'Single drone, fixed altitude',
     'supp_single_wallgap_2d': 'Wall with one gap',
@@ -59,11 +59,11 @@ SHEETS = [
     ('Default-budget demonstrations', [
         'demo_open_2d', 'example_config', 'strong_wind']),
     ('3D flight and constrained routes', [
-        'demo_four_3d', 'altitude_detour', 'narrow_passage']),
+        'demo_four_3d', 'altitude_detour', 'three_3d']),
     ('Clutter, bottlenecks and goal occupancy', [
         'supp_single_clutter_2d', 'supp_single_wallgap_2d', 'one_reached']),
     ('Altitude layers, coordination and a failure', [
-        'supp_layers_cross_2d', 'supp_yield_corridor', 'three_3d']),
+        'supp_layers_cross_2d', 'supp_yield_corridor', 'narrow_passage']),
 ]
 
 
@@ -213,16 +213,16 @@ def time_plot(ax, case, compact=False):
     ax.set_axisbelow(True)
 
 
-def legend(fig, y, compact=False):
+def legend(fig, y, compact=False, drone_count=4):
     items = [Line2D([0], [0], color=c, lw=1.5, label=f'Drone {i+1}')
-             for i, c in enumerate(COLOURS)]
+             for i, c in enumerate(COLOURS[:drone_count])]
     for marker, colour, label in [('s', '#444444', 'Start'), ('*', '#444444', 'Goal'),
                                    ('s', '#888888', 'Obstacle'),
                                    ('x', '#D55E00', 'Unfinished end')]:
         items.append(Line2D([0], [0], color=colour, marker=marker, linestyle='',
                             markersize=5, label=label))
     fig.legend(handles=items, loc='upper center', bbox_to_anchor=(.5, y),
-               ncol=4 if compact else 8, frameon=False, fontsize=9 if compact else 8,
+               ncol=4 if compact else len(items), frameon=False, fontsize=9 if compact else 8,
                handlelength=1.2, columnspacing=.9, handletextpad=.35)
 
 
@@ -245,7 +245,7 @@ def main():
             path_plot(ax, is_3d, case)
             time_plot(fig.add_subplot(gs[0, 1]), case)
             fig.suptitle(name.replace('_', ' '), y=.98, fontsize=13)
-            legend(fig, .91)
+            legend(fig, .91, drone_count=len(case['cfg']['start_positions']))
             fig.text(.5, .025,
                      f"Saved full-solver trace, seed 0: {case['source'].relative_to(ROOT)}\n"
                      "Crosses mark returned positions of unfinished drones; collision targets are not logged.",
@@ -269,7 +269,8 @@ def main():
         gs = fig.add_gridspec(3, 2, left=.07, right=.985, bottom=.06,
                               top=.84, hspace=.65, wspace=.38)
         fig.suptitle(heading+' (seed 0)', y=.995, fontsize=12)
-        legend(fig, .96, compact=True)
+        legend(fig, .96, compact=True,
+               drone_count=max(len(lookup[name]['cfg']['start_positions']) for name in names))
         for row, name in enumerate(names):
             case = lookup[name]
             ax, is_3d = spatial_axis(fig, gs[row, 0], case)

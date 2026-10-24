@@ -10,8 +10,19 @@ neighbours of $q$ and $V(q)=|\mathcal N(q)|$. The supplied motion law gives
  \sigma(q)&=\frac{1-\pi(q)}{(B-1)M(q)}.
  \end{aligned}
 \]
-Dijkstra entry costs are $1+\lambda\rho(q)$ for a non-goal cell and 1 for
-the goal, where
+\textbf{Value guidance (submitted).} For command $a$ from free cell $p$, the
+intended neighbour has weight $\pi(p)$, every other in-grid neighbour
+$(1-\pi(p))/(B-1)$, the row is renormalised, and mass on obstacle cells is a
+terminal crash. Value iteration uses these exact rows (stored sparsely) with
+$r_i=c_{\mathrm{step}}+C\Pr(\text{crash})+G\Pr(\text{arrival at }g_i)$ and
+$V_{i,h}(g_i)=0$, because arrival is terminal for that drone. Per-horizon
+action values are kept when $nA(H+1)N\le2.5\times10^7$ ($n$ free cells, $A$
+commands) on grids of at most 20,000 cells; otherwise the planner uses the
+Dijkstra guidance below. On the demo maps this takes under 0.2\,s before
+the first decision.
+
+\textbf{Dijkstra guidance (comparison A).} Entry costs are
+$1+\lambda\rho(q)$ for a non-goal cell and 1 for the goal, where
 \[
  \rho(q)=|\mathcal N(q)\cap O|\sigma(q),\qquad
  \lambda=\frac{w(G+|C|)}
@@ -52,8 +63,9 @@ Sixteen layouts cross $N=1,2,3,4$ with
 $\alpha\in\{0.25,0.5,1,2\}$ on $10\times10\times1$ or
 $10\times10\times5$ grids, with 0--5 obstacles (generator seed 4620).
 Each setting uses ten execution seeds and at most 500 simulations per
-decision; the two greedy settings use no search. These 1,920 development
-episodes are separate from all 3,300 evaluation episodes.
+decision; search-free settings use none. These $\val{DevEpisodes}$
+development episodes are separate from all $\val{TotalEpisodes}$ evaluation
+episodes.
 
 Round 1 compares risk weights, UCT constants and search-free policies
 under most-visited root choice and widening coefficient 1.5.
@@ -62,13 +74,23 @@ and widening coefficient 0.5. The selected setting is
 \texttt{anchor\_z1\_w0.5}: risk weight 1, UCT constant 0.35,
 switch threshold 1, widening coefficient 0.5 and rollout exploration 0.1.
 Here the suffix \texttt{w0.5} denotes widening, not the risk weight.
+Round 3 compares that Dijkstra guidance with single-drone value-iteration
+guidance, each with the anchored rule and with largest-mean-$Q$ root choice,
+plus both search-free policies. The selection criterion required no worse
+observed success count or mean $L$. Value guidance met it
+($\val{TuneVi}$ versus $\val{TuneDijkstra}$ successes), whereas
+largest-mean-$Q$ choice raised $L$ under both guidances
+($\val{TuneDijkstraMaxq}$ and $\val{TuneViMaxq}$). The round-3 Dijkstra arm
+reproduces the round-2 selected setting exactly.
+Development tables retain the planner hashes recorded for those versions;
+all evaluation suites were rerun with the final implementation.
 
 \begin{table}[H]
 \centering\small
 \caption{Development results: 160 episodes per setting. $L$: mean
 $\pm$95\% interval half-width. $\Delta L$: paired change from the selected
 setting, with a 95\% interval over ten seed blocks; lower is better.
-Selection among twelve settings makes these exploratory comparisons
+Selection across $\val{DevSettings}$ settings makes these exploratory comparisons
 optimistic for the development layouts.}
 \begin{tabular*}{\linewidth}{@{\extracolsep{\fill}}rlcrr@{}}
 \toprule Round & Setting & Success & $L$ & $\Delta L$ (95\% CI) \\
@@ -243,18 +265,56 @@ Among $\val{BaseMultiPairs}$ feasible multi-drone regression/generated pairs,
 search succeeds in $\val{BaseMultiFull}$ versus $\val{BaseMultiGreedy}$;
 removing search changes $L$ by $\val{BaseMultiDL}$ $\val{BaseMultiDLci}$.
 Search rescues $\val{BaseMultiRescued}$ episodes and loses
-$\val{BaseMultiLost}$. The $\val{BaseSinglePairs}$ single-drone pairs have
-$\val{BaseSingleFull}$ successes under each policy
-($\Delta L=\val{BaseSingleDL}$ $\val{BaseSingleDLci}$).
-These exploratory intervals pool episode differences across layouts;
-they are distinct from the S1--S3 seed-block intervals and do not
-establish a search advantage.
+$\val{BaseMultiLost}$. On the $\val{BaseSinglePairs}$
+single-drone pairs, search succeeds in $\val{BaseSingleFull}$ versus
+$\val{BaseSingleGreedy}$ ($\Delta L=\val{BaseSingleDL}$ $\val{BaseSingleDLci}$).
+These exploratory intervals resample whole execution-seed clusters,
+retaining the episode-weighted means across layouts; they are distinct from
+the balanced S1--S3 seed-block $t$ intervals. Removing search changes
+multi-drone success by $\val{BaseMultiDP}$\,pp $\val{BaseMultiDPci}$.
+Both the multi-drone success and completion-length intervals favour the
+base policy on these fixed layouts, without establishing a general ordering.
 
 An exhaustive small-model check separately verifies 704 state-action
 pairs and 6,048 positive-probability outcomes on all 11 admissible
 nonterminal states of a free $2\times2\times1$ two-drone grid
 (\texttt{results/small\_model\_verification.json}). This checks model
 semantics on that finite example, not performance on arbitrary maps.
+
+\subsection{Value-iteration versus Dijkstra guidance}
+\label{app:guidance-compare}
+S1, S2, S4, S5 and the regression/supplementary suites compare the earlier
+Dijkstra guidance (A) and submitted value guidance (B) on the same scenarios
+and seeds; pairs match
+scenario, variant, simulation cap and seed. S3 is omitted here because
+removing risk terms has different meanings under A and B. The A runs are archived in
+\texttt{results/guidance\_dijkstra/}. Over all solver suites, B succeeds in
+$\val{GuideB}$ of $\val{GuidePairs}$ distinct paired episodes and A in
+$\val{GuideA}$: B rescues $\val{GuideWins}$ and loses $\val{GuideLosses}$.
+The success change is $\val{GuideDP}$\,pp $\val{GuideDPci}$; penalised length
+changes by $\val{GuideDL}$ $\val{GuideDLci}$ steps. The aggregate excludes
+$\val{GuideDuplicates}$ repeated conditions shared by the budget and other
+suites. Intervals use 20,000 execution-seed cluster bootstrap resamples,
+rather than treating all episode differences as independent. Value guidance
+was selected on the development set before these evaluation runs; the
+comparison does not establish uniform superiority over Dijkstra guidance.
+The pooled completion-length interval favours value guidance, while the
+success-change interval includes zero.
+
+\begin{table}[H]
+\centering\small
+\setlength{\tabcolsep}{3pt}
+\caption{Paired comparison of guidance B (value iteration, submitted) with A
+(Dijkstra). Rescues/Losses: pairs that only B / only A completes; $\Delta L$:
+B minus A with a 95\% seed-cluster bootstrap interval.
+The aggregate counts repeated conditions once.}
+\begin{tabular*}{\linewidth}{@{\extracolsep{\fill}}lrrrrrl@{}}
+\toprule Suite & Pairs & A & B & Rescues & Losses & $\Delta L$ (95\% CI) \\
+\midrule
+\GuidanceRows
+\bottomrule
+\end{tabular*}
+\end{table}
 
 \subsection{Supplementary end-to-end cases}
 \label{app:supplement}
@@ -293,7 +353,7 @@ Five policies use seeds 0--1,999; the corridor adds a fixed batch of
 interval missed its DP value; the original batch is retained in
 \texttt{results/ceilings.json} and the extension in
 \texttt{results/ceiling\_validation.json}. Wilson 95\% intervals describe
-these diagnostic samples, separate from the 3,300 solver-evaluation episodes;
+these diagnostic samples, separate from the $\val{TotalEpisodes}$ solver-evaluation episodes;
 they do not establish policy equivalence.}
 \begin{tabular*}{\linewidth}{@{\extracolsep{\fill}}lrrr@{}}
 \toprule Case & DP max. (\%) & Policy successes & 95\% CI (\%) \\

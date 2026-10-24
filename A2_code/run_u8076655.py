@@ -24,6 +24,7 @@ VARIANTS = {
     'no_widening': {'progressive': False},
     'no_risk': {'risk_weight': 0.},
     'visits_choice': {'switch_z': None},
+    'max_q': {'switch_z': 0.},
     'heuristic': {'max_simulations': 0},
 }
 

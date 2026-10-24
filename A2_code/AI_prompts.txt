@@ -1187,3 +1187,182 @@ Tool: OpenAI Codex
 Purpose: Audit the updated report and diagnostic DP, correct unsupported conclusions and initial-goal edge cases, validate the final submission and push the repository.
 Prompt (verbatim):
 codex重新修改了些内容 重新推送到github并审核一下
+
+Tool: Anthropic Claude Code (Claude Opus 5.5)
+Purpose: Ask why proposals use risk-aware Dijkstra, goal distance and drone occupancy coordination, whether this is in the course material, and whether something better exists.
+Prompt (verbatim):
+你解释下 为啥proposal用 Risk‑aware Dijkstra + 目标距离 + 无人机占用协调 这是课件里的吗 我不记得课件讲了 Dijkstra 这个方法号码 还有更好的吗
+
+Tool: Anthropic Claude Code (Claude Opus 5.5)
+Purpose: Ask whether RTDP or value iteration is the better value guidance for MCTS.
+Prompt (verbatim):
+RTDP 和 Value iteration 提供价值引导，再配合 MCTS 哪个更好
+
+Tool: Anthropic Claude Code (Claude Opus 5.5)
+Purpose: Ask how value guidance compares with the current heuristic.
+Prompt (verbatim):
+对比现在的启发式呢
+
+Tool: Anthropic Claude Code (Claude Opus 5.5)
+Purpose: Ask which strategy is best overall.
+Prompt (verbatim):
+我没懂 那两种对比现在的 你觉得最优的策略是什么
+
+Tool: Anthropic Claude Code (Claude Opus 5.5)
+Purpose: Request a value-iteration-guided version (B), compared against the current solver and adopted only if better (the first message was interrupted and replaced by the second).
+Prompt (verbatim):
+那就改成B呗 10个小时 也就是睡一觉的事
+你可以弄个B弄个新版本对比下 如果B更好 就再替换成B
+
+Tool: Anthropic Claude Code (Claude Opus 5.5)
+Purpose: Review a suggestion (pasted below) about course-aligned components, horizon-consistent value guidance, a largest-mean-Q root control and naming, and apply it where suitable.
+Prompt (verbatim, including the pasted suggestion):
+看一下这个建议怎么样 合适的话 按照这个建议改 
+
+重新对照代码和课件后，**最值得用课堂方法进一步比较的是三处：动作引导、叶子估值、最终动作选择。选择和回传已经采用课堂方法，建议保留。**
+
+还要区分：有些地方只是名称可以更准确；有些地方需要真正修改算法，不能只换名称。
+
+| 当前部分 | 与课件的对应关系 | 我的建议 |
+|---|---|---|
+| **树内选择：UCT** | Week 5 明确讲过 UCB/UCT | **保留**，已经符合课程思路 |
+| **扩展：progressive widening** | 课堂讲扩展框架；具体 widening 规则是额外设计 | 多机保留；小动作空间可以比较常规扩展，尚无证据必须替换 |
+| **动作引导：风险 Dijkstra＋手工评分** | 对应课件“用启发式或确定性问题的解指导 rollout” | **优先比较单机 VI 的动作价值引导** |
+| **叶子估值：距离＋目标奖励近似** | 属于启发式价值估计 | **优先比较单机 VI 的状态价值估计** |
+| **rollout：贪心为主、少量随机探索** | 对应贪心 rollout，也有 ε-greedy 的结构 | 保留，名称可以写得更准确 |
+| **候选动作：前四名内指数加权采样** | 使用了 softmax 的形式，但加入了截断和自定义评分 | 称为“截断 softmax 动作提议”，不必另换算法 |
+| **回传：回报平均值** | 直接对应课堂 MCTS 回传公式 | **保留，不优先换 Q-learning** |
+| **最终动作：启发式基准＋方差门槛** | 自定义规则，课件没有规定这一门槛 | **补充直接取最大平均 \(Q\) 的对照** |
+| **无人机占用预留、顺序协调** | 针对本题的协调启发式 | 保留并明确近似性质；主课件中没有找到可直接替换的专用协调算法 |
+
+其中 UCT、启发式 rollout 和平均回传，可以直接对应 [Week 5 第31–35页](</Users/apple/Documents/26 s2/COMP8620/week5-MDPSolving.pdf>)；ε-greedy 和 Gibbs softmax 分别见 [Week 9 第14页](</Users/apple/Documents/26 s2/COMP8620/week9-RLBasics-1.pdf>)、[Week 10 第30页](</Users/apple/Documents/26 s2/COMP8620/week10-RLBasics.pdf>)。这些策略在代码中的具体组合仍属于你的设计。
+
+**第一优先是把引导和叶子估值一起做成 VI 候选版本。**
+
+它们可以共用同一套单机价值计算：
+
+\[
+Q_{i,h}(p,a)
+=\mathbb E\!\left[r_i+\gamma V_{i,h-1}(p')\mid p,a\right],
+\qquad
+V_{i,h}(p)=\max_a Q_{i,h}(p,a).
+\]
+
+这里：
+
+- \(Q_{i,h}\) 帮助判断“当前该选哪个动作”；
+- \(V_{i,h}\) 帮助判断“模拟截断后的状态还有多大价值”。
+
+这样能减少两套独立手工评分之间的不一致。Value iteration 本身来自课堂；**忽略其他无人机求单机价值，再用于联合 MCTS，是我们设计的近似组合**，不能称为联合问题的精确解。[Week 5 第9页](</Users/apple/Documents/26 s2/COMP8620/week5-MDPSolving.pdf>)
+
+我看到工作区已经加入这个候选分支，默认仍是 `guidance='dijkstra'`。另外，候选代码目前让动作提议使用最长时域的 \(Q\)，叶子估值则按剩余步数取 \(V\)。**如果要把它描述成按剩余时域决策的 VI 引导，两处需要统一使用当前剩余步数。**[候选实现](/Users/apple/github/8620/A2_code/planner.py:152)
+
+**第二优先是补“最大平均 \(Q\)”的根节点选择对照。**
+
+你已有“访问次数最多”的对照，但它没有回答当前门槛是否优于
+\[
+a_{\mathrm{exec}}=\arg\max_a\widehat Q(s,a).
+\]
+这个对照改动小、解释直接，能检验当前切换门槛是否值得保留。现有结果支持当前规则优于已测的访问次数规则，尚不能说明它优于最大平均 \(Q\)。[现有消融结果](/Users/apple/github/8620/A2/tables/component_overall_rows.tex)
+
+**命名方面，我建议立即统一以下表述，算法行为无需因此改变：**
+
+- rollout：**greedy rollout with ε exploration**。它按启发式评分贪心，探索也经过目标过滤，直接叫标准的 Q-based ε-greedy 不够准确。
+- 候选采样：**truncated softmax proposals**。使用 softmax 形式，不代表采用了 Actor–Critic。
+- 回传：**sample-mean return backup with heuristic leaf evaluation**。准确表达平均回报和截断估值。
+- 根节点规则：**heuristic switching based on an estimated standard-error margin**。避免使用“显著性检验”“安全改进”“保证不退化”等名称。
+- 动作过滤：**intended-target filtering**。被排除的指令仍可能是模拟器允许输入的动作，不能笼统称为“非法动作”。
+
+**我建议的改进顺序是：完成已有 VI 对照 → 比较最大平均 \(Q\) → 再决定是否简化手工评分。**UCT、平均回传和占用协调先保留；RTDP 可以作为小规模独立对照，目前没有充分理由整体替换现有求解器。
+
+Tool: Anthropic Claude Code (Claude Opus 5.5)
+Purpose: Progress queries during the development comparison and the overnight rerun with value guidance.
+Prompt (verbatim):
+结果怎么样
+
+Tool: Anthropic Claude Code (Claude Opus 5.5)
+Purpose: Progress query.
+Prompt (verbatim):
+跑到什么程度了
+
+Tool: Anthropic Claude Code (Claude Opus 5.5)
+Purpose: Progress and interim-result query.
+Prompt (verbatim):
+还要跑多久 目前效果咋样
+
+Tool: Anthropic Claude Code (Claude Opus 5.5)
+Purpose: Progress query.
+Prompt (verbatim):
+跑到什么程度了
+
+Tool: Anthropic Claude Code (Claude Opus 5.5)
+Purpose: Ask when the rerun will finish.
+Prompt (verbatim):
+几点能跑完
+
+Tool: Anthropic Claude Code (Claude Opus 5.5)
+Purpose: Ask whether the rerun has finished.
+Prompt (verbatim):
+跑完了吗
+
+
+Tool: OpenAI Codex
+Purpose: Audit rerun experiments, correct statistical summaries and report consistency, regenerate figures and submission artifacts.
+Prompt (verbatim):
+重新跑了实验 重新审核校对吧 如果有要改动的 直接改了吧 包括图如果需要重新生成的话
+
+
+Tool: OpenAI Codex
+Purpose: Explain the assignment solver and compare its components with course methods (discussion before the rerun audit).
+Prompt (verbatim):
+这个方法好吗 还有更好的吗 并且课件里讲过的
+
+
+Tool: OpenAI Codex
+Purpose: Explain the assignment solver and compare its components with course methods (discussion before the rerun audit).
+Prompt (verbatim):
+第四阶段：Backpropagation —模拟结果怎样更新 Q？ 这里为啥不用Q-learning 哪个更好
+
+
+Tool: OpenAI Codex
+Purpose: Explain the assignment solver and compare its components with course methods (discussion before the rerun audit).
+Prompt (verbatim):
+最容易忽视的地方：搜索结束后，为什么不直接执行 Q 最大的动作？ 我目前用的启发式符合要求吗 课件里有更好的方法吗
+
+
+Tool: OpenAI Codex
+Purpose: Explain the assignment solver and compare its components with course methods (discussion before the rerun audit).
+Prompt (verbatim):
+你重新看一下 还有哪些 部分 命名可以用课件老师提到的更好的方法都
+
+
+Tool: OpenAI Codex
+Purpose: Explain the assignment solver and compare its components with course methods (discussion before the rerun audit).
+Prompt (verbatim):
+风险加权路径成本 用Dijkstra 是课件上的吗 还是因为这是启发式算法
+
+
+Tool: OpenAI Codex
+Purpose: Explain the assignment solver and compare its components with course methods (discussion before the rerun audit).
+Prompt (verbatim):
+Dijkstra 计算的是近似确定性图上的成本。它不是通过 Bellman Backup 得到的真实随机 MDP 最优价值函
+数。你把 Dijkstra 当作 MCTS 的引导器，而不是替代 MCTS，这个设计逻辑才是正确的 为什么这里不用bellman backup
+
+
+Tool: OpenAI Codex
+Purpose: Explain the assignment solver and compare its components with course methods (discussion before the rerun audit).
+Prompt (verbatim):
+如果老师问“为什么要有两个 Simulator”，请回答：让规划器可以反复采样假想后继，同时保证真实任务的
+随机数流与规划计算隔离；这样性能比较才更可解释。 没懂
+
+
+Tool: OpenAI Codex
+Purpose: Explain the assignment solver and compare its components with course methods (discussion before the rerun audit).
+Prompt (verbatim):
+为啥要分成两个模拟器 你还没解释呢
+
+
+Tool: OpenAI Codex
+Purpose: Remove compilation/runtime intermediates and push the reviewed assignment files to GitHub.
+Prompt (verbatim):
+清空中间文件 推送到github

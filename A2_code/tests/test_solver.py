@@ -282,7 +282,7 @@ class SolverTests(unittest.TestCase):
         hits=sum(env.simulate(state,1)[3]['num_collisions'] for _ in range(6000))/6000
         self.assertLess(abs(hits-planner.departure_risk[2,2,0]),.02)
 
-    def test_anchored_choice_switches_only_on_significant_gain(self):
+    def test_anchored_choice_respects_estimated_margin(self):
         from planner import Edge
         env,_=self.env();planner=MCTSPlanner(env,switch_z=1.)
         def edges(gain,spread):
@@ -360,6 +360,81 @@ class SolverTests(unittest.TestCase):
             run_u8076655.make_env=original
         self.assertEqual(events,[('report',True),'show'])
         self.assertTrue(result['success'])
+
+    def test_value_guidance_is_optional_and_matches_deterministic_limit(self):
+        data=configuration();data['alpha']=1e-6  # slips vanish: value = discounted steps + goal
+        env,state=self.env(data)
+        self.assertIsNone(MCTSPlanner(env,guidance='dijkstra').values)  # Dijkstra guidance keeps no values
+        self.assertIsNotNone(MCTSPlanner(env).values)  # value-iteration guidance is the default
+        planner=MCTSPlanner(env,guidance='vi');d=3;g=.98
+        expected=-1.*(1-g**d)/(1-g)+100.*g**(d-1)
+        self.assertAlmostEqual(planner.values[0][30][planner.value_index[1,1,0]],expected,places=3)
+        self.assertEqual(planner._leaf(state,30)*planner.scale,planner.values[0][30][planner.value_index[1,1,0]])
+        with self.assertRaises(ValueError):MCTSPlanner(env,guidance='astar')
+
+    def test_value_guided_proposals_are_admissible(self):
+        data=configuration(3,True);data['grid_size']=[5,5,3]
+        data['start_positions']=[[0,0,0],[0,4,2],[1,2,1]];data['goal_positions']=[[4,0,0],[4,4,2],[4,2,1]]
+        data['obstacle_cells']=[[1,1,0],[1,3,2],[2,2,1]]
+        env,state=self.env(data);planner=MCTSPlanner(env,seed=3,guidance='vi')
+        blocked={tuple(p) for p in data['obstacle_cells']}
+        for explore in (True,False):
+            for _ in range(200):
+                digits=decode_action(planner._proposal(state,randomize=True,explore=explore),26,3)
+                for i,d in enumerate(digits):
+                    target=tuple(state[i,:3]+planner.vectors[d])
+                    self.assertTrue(all(0<=target[k]<5 if k<2 else 0<=target[k]<3 for k in range(3)))
+                    self.assertNotIn(target,blocked)
+
+    def test_value_iteration_matches_upstream_stochastic_returns(self):
+        # Obtain probabilities and outcomes through the supplied simulator, without
+        # duplicating the planner's slip-law construction or transition matrix.
+        class CaptureDistribution:
+            def choice(self,count,p):
+                self.probabilities=np.asarray(p,dtype=float).copy()
+                return int(np.flatnonzero(p>0)[0])
+
+        for gamma in (0.,.8,1.):
+            for mask in ('full','axial'):
+                with self.subTest(gamma=gamma,mask=mask):
+                    data=configuration();data.update(grid_size=[4,3,1],
+                        start_positions=[[1,1,0]],goal_positions=[[3,1,0]],
+                        obstacle_cells=[[2,1,0]],max_num_steps=3,alpha=.7,
+                        discount_factor=gamma)
+                    env,_=self.env(data)
+                    model=env if mask=='full' else ActionMask(env,mask)
+                    planner=MCTSPlanner(model)
+                    cells=[tuple(p) for p in np.argwhere(planner.free)]
+                    goal=tuple(data['goal_positions'][0])
+                    outcomes={}
+                    for p in cells:
+                        if p==goal:continue
+                        state=np.asarray([[*p,0]],dtype=np.int32)
+                        for a in range(planner.base):
+                            capture=CaptureDistribution();env.rng=capture
+                            model.simulate(state,a)
+                            branches=[]
+                            for j,probability in enumerate(capture.probabilities):
+                                if probability==0:continue
+                                env.rng=FixedChoices([j])
+                                nxt,reward,done,_=model.simulate(state,a)
+                                branches.append((probability,reward,bool(done),tuple(nxt[0,:3])))
+                            outcomes[p,a]=branches
+                    previous={p:0. for p in cells}
+                    for h in range(1,4):
+                        current={goal:0.}
+                        for p in cells:
+                            if p==goal:continue
+                            q=[sum(prob*(reward+(0. if done else gamma*previous[nxt]))
+                                   for prob,reward,done,nxt in outcomes[p,a])
+                               for a in range(planner.base)]
+                            index=planner.value_index[p]
+                            np.testing.assert_allclose(planner.q_history[0][h][index],q,
+                                                       rtol=2e-6,atol=1e-4)
+                            current[p]=max(q)
+                            self.assertAlmostEqual(planner.values[0][h][index],max(q),delta=1e-4)
+                        self.assertEqual(planner.values[0][h][planner.value_index[goal]],0.)
+                        previous=current
 
     def test_invalid_configurations_fail_clearly(self):
         changes=[{'alpha':0.}, {'alpha':-1.}, {'discount_factor':1.1}, {'max_num_steps':0},

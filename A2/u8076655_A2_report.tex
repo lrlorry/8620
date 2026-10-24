@@ -445,10 +445,10 @@ destinations to select driving actions.
 \section{Supporting definitions and results}
 \label{app:details}
 Complete regression, budget and tuning data remain in the source archive.
-The six original evaluation suites retain their generating hashes;
-all \val{EquivTotal} original seed-0 traces replay identically with the
-current planner (\texttt{results/planner\_equivalence.json}).
-Baseline and supplementary runs use the current planner directly.
+All evaluation suites were run with the submitted planner, whose hash is
+recorded in each \texttt{results/*.meta.json}; the earlier Dijkstra-guidance
+runs are archived in \texttt{results/\allowbreak guidance\_dijkstra/}
+(Appendix~\ref{app:guidance-compare}).
 \input{partB_details.tex}
 
 \clearpage

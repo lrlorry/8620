@@ -17,8 +17,8 @@ on stdout. `--quiet` suppresses the progress lines.
 
 The default allowance is **9.5 seconds per decision** with at most 2,000 MCTS
 simulations. Search stops at 97% of the allowance and checks the deadline
-before every simulator call, so an overrun is limited to one simulator call
-plus bookkeeping; on the development machine the largest default decision
+before every simulator call. Simulator calls and bookkeeping can extend past
+the check; on the development machine the largest default decision
 took about 9.2 s. This is a measurement, not a hard real-time guarantee. The loop replans after
 every executed transition. Planning is serial and single-threaded (the runner
 sets numerical-library thread limits to one). A planning simulator and a
@@ -52,37 +52,49 @@ unchanged on Linux.
 ## Solver
 
 `planner.py` implements UCT with action progressive widening, sampled-outcome
-children, epsilon-greedy guided rollouts, finite-horizon truncation, a static
-leaf estimate and incremental Monte Carlo backups. Guidance is risk-aware:
+children, greedy rollouts with epsilon exploration, finite-horizon truncation, a
+heuristic leaf value and sample-mean return backups. Guidance comes from
+single-drone value iteration (`guidance='vi'`, the default):
 
-- For each goal, a Dijkstra cost-to-go map charges every entered cell
-  `1 + lambda * rho(cell)`, where `rho` is the probability that the next move
-  slips into an obstacle (computed from the configuration with the supplied
-  `d/(d+alpha)` rule) and `lambda = (|collision penalty| + goal reward) / |step cost|`.
-  A detour is taken only when it buys enough collision probability.
-- A joint proposal adds the expected loss of another active drone slipping
+- Before the first decision, each drone's MDP is solved alone (ignoring the
+  other drones) by finite-horizon value iteration on the supplied slip law,
+  giving `Q[i][h](p, a)` and `V[i][h](p)` for every remaining horizon `h`.
+  Proposals rank commands by `Q` and rollout cutoffs use `V`, both at the steps
+  actually left. Rows are exact and sparse; it takes under 0.2 s on the demo maps.
+- A joint proposal adds a risk surcharge for another active drone slipping
   into the chosen cell this step (only drones in the same layer when altitude
-  is fixed).
-- The leaf estimate drops the goal reward of a drone that drones frozen at
-  their goals disconnect from its goal.
-- Exploratory proposals and rollout noise choose uniformly among each drone's
-  admissible commands (inside the grid, not an obstacle, not already reserved);
-  the tree never admits a command towards an invalid cell.
+  is fixed); occupied and already reserved cells receive a large penalty.
+- The leaf drops the goal value of a drone that drones frozen at their goals
+  disconnect from its goal.
+- Truncated softmax proposals sample among the cheapest commands; exploratory
+  proposals and rollout noise choose uniformly among each drone's admissible
+  commands (intended cell inside the grid, not an obstacle, not reserved).
+
+`guidance='dijkstra'` selects the earlier risk-weighted Dijkstra cost-to-go
+guidance (solver A); its complete results are archived in
+`results/guidance_dijkstra/` for the paired comparison in the report. Value
+guidance was adopted on the development set (round 3): it was not worse than
+A in success or length, and on the evaluation suites it matches A's success
+while reducing average penalised completion length on the pooled tested
+conditions. The aggregate removes repeated conditions and uses execution-seed
+cluster bootstrap intervals; this does not establish superiority on every suite.
 
 The final root decision is anchored to the greedy (base-policy) action: another
 action is executed only if its mean return exceeds the base action's by more
 than one pooled standard error of the difference. This is a heuristic test,
-not a policy-improvement guarantee. Progressive widening admits
-`ceil(0.5 * sqrt(N(s)+1))` actions, so each candidate receives enough visits to
-be compared. On the development set the earlier most-visited rule made search
-*worse* than its own base policy; the anchored rule removed that loss.
+not a calibrated significance test or a policy-improvement guarantee.
+Progressive widening admits `ceil(0.5 * sqrt(N(s)+1))` actions to concentrate
+simulations, without imposing a minimum visit count on every candidate.
+The switching rule improves over the tested most-visited and largest-mean-Q
+rules on S3, but search still has no consistent benefit over its guided base
+policy across the evaluation suites.
 
 The planner only accesses `get_config()`, `simulate(state, action)`, and
 `num_actions` (property or method). All maps are derived from the public
 configuration; it does not read the simulator's private action vectors,
 distance field, RNG, live positions or time counter. Parameters were selected
-on a separate development set (`environments/dev/`, `results/dev/`, two rounds,
-1,920 episodes) before any reported evaluation ran.
+on a separate development set (`environments/dev/`, `results/dev/`, three rounds,
+2,880 episodes) before any reported evaluation ran.
 
 `multi_drone.py` and `multi_drone_config.py` are vendored from the teacher's
 checkout, revision recorded in `UPSTREAM.json`. Only Vedo imports were moved
@@ -151,7 +163,7 @@ python scripts/compute_ceilings.py                  # exact success ceilings (va
 python scripts/verify_ceilings.py                   # extra corridor policy validation, 8,000 fixed seeds
 ```
 
-Success-ceiling diagnostics optimise the probability of completing all goals, whereas the submitted planner optimises discounted reward. They are numerical finite-horizon dynamic programs, not evidence that the submitted policy is optimal. The original policy-validation batches remain in `results/ceilings.json`; `results/ceiling_validation.json` records an additional fixed corridor batch (seeds 2,000–9,999), its Wilson interval and source/configuration hashes. The initial 2,000-run corridor interval missed the DP value; the extension is a diagnostic check, separate from the 3,300 solver-evaluation episodes. The four-drone independent-policy comparison uses different sample sizes and does not establish a coordination benefit. Tests in `tests/test_ceilings.py` independently enumerate outcomes through the supplied simulator, covering boundaries, obstacles, shared cells and initially reached drones.
+Success-ceiling diagnostics optimise the probability of completing all goals, whereas the submitted planner optimises discounted reward. They are numerical finite-horizon dynamic programs, not evidence that the submitted policy is optimal. The original policy-validation batches remain in `results/ceilings.json`; `results/ceiling_validation.json` records an additional fixed corridor batch (seeds 2,000–9,999), its Wilson interval and source/configuration hashes. The initial 2,000-run corridor interval missed the DP value; the extension is a diagnostic check, separate from the 3,460 solver-evaluation episodes. The four-drone independent-policy comparison uses different sample sizes and does not establish a coordination benefit. Tests in `tests/test_ceilings.py` independently enumerate outcomes through the supplied simulator, covering boundaries, obstacles, shared cells and initially reached drones.
 
 The scenario gallery reads stored seed-0 full-solver traces without running
 the planner. It covers all 76 non-development manifest entries plus the
@@ -163,12 +175,12 @@ with relaxed deadlines. Crosses mark unfinished drones' returned terminal
 positions; raw collision targets are not logged. Single traces illustrate
 behaviour rather than replace the repeated-run statistics.
 
-The reported design has 3,300 episodes (360 regression, 160 generated,
-540 factorial, 880 component, 400 budget, 160 control, 520 search-free
-baseline, 280 supplementary) plus 1,920 development-set episodes. Two planner fixes made after the
-reported runs cannot fire in any reported scenario; `scripts/verify_equivalence.py`
-replays every reported seed-0 episode with the final code and records the
-step-by-step comparison in `results/planner_equivalence.json`. Raw outcomes, seeds, search diagnostics and
+The reported design has 3,460 episodes (360 regression, 160 generated,
+540 factorial, 1,040 component, 400 budget, 160 control, 520 search-free
+baseline, 280 supplementary) plus 2,880 development-set episodes in three rounds.
+Every reported suite ran with the submitted planner (hash in each `*.meta.json`);
+`scripts/verify_equivalence.py` replays the reported seed-0 episodes with the
+current code. Raw outcomes, seeds, search diagnostics and
 provenance (`*.meta.json`, planner hash) are in `results/`; seed-0
 trajectories are in `results/trajectories/`. `summary.csv` gives means with
 95% Student-t intervals and Wilson intervals for success rates. Factor and

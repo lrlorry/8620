@@ -1,0 +1,25 @@
+{
+  "python": "3.12.9 | packaged by Anaconda, Inc. | (main, Feb  6 2025, 13:04:33) [Clang 14.0.6 ]",
+  "platform": "macOS-26.6.2-x86_64-i386-64bit",
+  "processor": "i386",
+  "planning": "serial per episode",
+  "workers": 12,
+  "suite": "factorial",
+  "repetitions": 20,
+  "simulation_cap": 2000,
+  "wall_clock_cap": 3600.0,
+  "planner_sha256": "a55df1057bbf5c36dee40ca66310506656aa45fb0fa31d381b85834f0a4379dc",
+  "upstream": {
+    "repository": "https://github.com/RDLLab/MultiDroneUnc",
+    "revision": "ea3cbfedd0f80d6ec260c6db26fb7a6e4e2e4056",
+    "changes": "Only defer vedo imports into visualization methods; all dynamics/config code is unchanged. Headless subclass overrides plotting hooks.",
+    "original_sha256": {
+      "multi_drone.py": "8270aeaeee4953a2997b4ee5f2a8f7adb493969e179e70a2536cc42dbde6924c",
+      "multi_drone_config.py": "b819e07864c4e616166ae024f8579fcbff94002cf303bef4524bf8bd7116192a"
+    },
+    "vendored_sha256": {
+      "multi_drone.py": "621faa652f57c0c33f1db42656b4ad2bdcf83519d3a7223ea9c4d14f1f96e21e",
+      "multi_drone_config.py": "b819e07864c4e616166ae024f8579fcbff94002cf303bef4524bf8bd7116192a"
+    }
+  }
+}

@@ -1,7 +1,7 @@
 """Replay every reported seed-0 episode with the current planner and compare it step by step.
 
-The reported suites ran with the planner hash recorded in results/*.meta.json. Later
-fixes that cannot fire on any reported scenario must leave these replays identical.
+Each reported suite ran with the planner hash recorded in results/*.meta.json. If the
+code is changed later, these replays must still be identical before the results are reused.
 """
 
 import os
@@ -22,10 +22,8 @@ from experiments import UNCAPPED
 from run_u8076655 import run_episode
 
 SUITES=['regression','random','factorial','components','budget','control']
-RATIONALE=('Two later fixes: (1) with fixed altitude, the inter-drone slip penalty ignores drones on other '
-           'layers; every reported fixed-altitude multi-drone scenario has a single layer. (2) The leaf '
-           'estimate drops goals that drones frozen at their goals disconnect; no subset of goal cells '
-           'disconnects the free space of any reported scenario. Neither code path changes a reported decision.')
+RATIONALE=('Every reported suite records the planner hash that produced it; replaying the stored '
+           'seed-0 episodes with the current planner must reproduce them step for step.')
 
 
 def replay(task):

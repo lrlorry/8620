@@ -16,6 +16,7 @@ def main():
         relative=path.relative_to(ROOT)
         if not path.is_file() or any(p in excluded for p in relative.parts):continue
         if path.suffix in ('.pyc','.zip') or path.name=='.DS_Store':continue
+        if path.name.endswith('_progress.log') or (path.name.startswith('rerun_') and path.suffix=='.log'):continue
         files[relative.as_posix()]=path.read_bytes()
     for path in sorted(REPORT.rglob('*')):
         if path.is_file() and path.suffix in ('.tex','.pdf','.png','.md','.txt'):

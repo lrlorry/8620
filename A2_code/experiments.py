@@ -28,8 +28,8 @@ UNCAPPED = 3600.  # Effectively no wall-clock cap; the simulation cap binds inst
 CORNERS = [f'factor_S{s}_A{a}_C{c}' for s in (5,20) for a in (6,26) for c in (0,5)]
 BUDGET_TASKS = ['demo_open_2d','strong_wind','demo_four_3d','factor_S10_A26_C5']
 # Parameter-selection arms, evaluated only on the separate development layouts.
-_R1 = {'switch_z': None, 'widening': 1.5}   # round 1: most-visited choice, wide widening
-_R2 = {'risk_weight': 1., 'widening': 1.5}  # round 2: anchored choice variants
+_R1 = {'guidance': 'dijkstra', 'switch_z': None, 'widening': 1.5}  # round 1: most-visited, wide
+_R2 = {'guidance': 'dijkstra', 'risk_weight': 1., 'widening': 1.5}  # round 2: anchored choice
 TUNING_ROUNDS = {
     1: {'risk0': {**_R1, 'risk_weight': 0.}, 'risk0.3': {**_R1, 'risk_weight': .3},
         'risk1': {**_R1, 'risk_weight': 1.}, 'risk3': {**_R1, 'risk_weight': 3.},
@@ -40,8 +40,13 @@ TUNING_ROUNDS = {
     2: {'anchor_z1': {**_R2, 'switch_z': 1.}, 'anchor_z2': {**_R2, 'switch_z': 2.},
         'anchor_z1_eps0': {**_R2, 'switch_z': 1., 'rollout_epsilon': 0.},
         'anchor_z1_w0.5': {**_R2, 'switch_z': 1., 'widening': .5}},
+    3: {'dijkstra': {'guidance': 'dijkstra'}, 'vi': {'guidance': 'vi'},
+        'dijkstra_maxq': {'guidance': 'dijkstra', 'switch_z': 0.}, 'vi_maxq': {'guidance': 'vi', 'switch_z': 0.},
+        'greedy_dijkstra': {'guidance': 'dijkstra', 'max_simulations': 0},
+        'greedy_vi': {'guidance': 'vi', 'max_simulations': 0}},
 }
-# The adopted default (planner.py) is risk_weight=1, switch_z=1, widening=0.5: round-2 arm anchor_z1_w0.5.
+# Round 2 adopted risk_weight=1, switch_z=1, widening=0.5 (anchor_z1_w0.5); round 3 then adopted
+# value-iteration guidance ('vi') over the Dijkstra guidance, keeping the anchored choice.
 
 
 def jobs_for(suite, scenarios, repetitions, simulations, tuning_round=1):
@@ -54,7 +59,7 @@ def jobs_for(suite, scenarios, repetitions, simulations, tuning_round=1):
                     yield s, 'full', simulations, seed, {}
     elif suite == 'components':
         for name in CORNERS:
-            for variant in ('no_guidance','no_leaf','no_widening','no_risk','visits_choice','heuristic'):
+            for variant in ('no_guidance','no_leaf','no_widening','no_risk','visits_choice','max_q','heuristic'):
                 # Uniform search mostly times out; ten seeds already resolve its large effect.
                 for seed in range(min(repetitions, 10) if variant == 'no_guidance' else repetitions):
                     yield by_name[name], variant, 0 if variant == 'heuristic' else simulations, seed, {}

@@ -1,0 +1,81 @@
+{
+  "reviewed_at": "2026-10-25T07:05:06.252248+11:00",
+  "planner_sha256": "1047d92e57f5b0efddc2fd99f7e64f14afed4852f8d3473e742442f5cad676a8",
+  "solver_behavior_changed_by_review": false,
+  "evaluation_episodes": 3460,
+  "suites": {
+    "regression": {
+      "episodes": 360,
+      "sha256": "742e56d18e75123034992f0881677dd53a0be745835a181baf74879943472743"
+    },
+    "random": {
+      "episodes": 160,
+      "sha256": "c181bea504537bc13af916eca881b1228dd56cd084ad51d1a14d3762bb65d35f"
+    },
+    "factorial": {
+      "episodes": 540,
+      "sha256": "6958253c347c973361547179aa75a7ffe3cb5dae2c27a27477d4f1e1792ba6fe"
+    },
+    "components": {
+      "episodes": 1040,
+      "sha256": "c65db4d928f6b862f29c75abd3c412c2d1721936196c445d0990bddcdccfecb8"
+    },
+    "budget": {
+      "episodes": 400,
+      "sha256": "07efe19c1c95170b568b499bf0789f2ff2f1bab0caa648081a70e7b5f4336764"
+    },
+    "control": {
+      "episodes": 160,
+      "sha256": "46b71eadc35d565272d0fd877be075898e0bd5e914898009d0850c823c724673"
+    },
+    "baseline": {
+      "episodes": 520,
+      "sha256": "3c46a5347b76e8c531834e03a5b0ca486fc2666c14b0460c07e44dba91cc49e4"
+    },
+    "supplement": {
+      "episodes": 280,
+      "sha256": "4676d0421a3ff034e647e2509db7f9581c48c92c51694dc15749b197d9301942"
+    }
+  },
+  "all_recorded_simulation_caps_completed": true,
+  "unit_tests": 45,
+  "unit_test_log_sha256": "de3c7ad31f2403e1fa656ebdd421854cc14a2d3a7fe271cc81e9645f6fcd2033",
+  "independent_vi_check": "Upstream-enumerated one-to-three-step returns; gamma 0, 0.8, 1; full and axial commands; obstacles and boundaries",
+  "small_model": {
+    "joint_states": 11,
+    "state_action_pairs": 704,
+    "positive_probability_outcomes": 6048,
+    "passed": true,
+    "scope": "free 2x2x1 grid, two drones, all 64 actions, all admissible nonterminal states"
+  },
+  "gallery_cases": 77,
+  "gallery_source_hashes_verified": true,
+  "guidance_comparison": {
+    "pairs": 1680,
+    "duplicate_pairs_removed": 80,
+    "wins": 44,
+    "losses": 43,
+    "delta": {
+      "mean": -0.8160714285714286,
+      "lower": -1.3797691197691198,
+      "upper": -0.277767857142858,
+      "n": 1680,
+      "seed_blocks": 20,
+      "resamples": 20000,
+      "method": "percentile bootstrap of execution-seed clusters"
+    },
+    "success_delta": {
+      "mean": 0.05952380952380952,
+      "lower": -0.8928571428571429,
+      "upper": 1.0613207547169812,
+      "n": 1680,
+      "seed_blocks": 20,
+      "resamples": 20000,
+      "method": "percentile bootstrap of execution-seed clusters"
+    }
+  },
+  "report_pdf_sha256": "eccbe056a6d897e938d128cdb6b51df60f3af386dc954461204c02e542192dbc",
+  "report_pages": 26,
+  "latex_unresolved_references": false,
+  "latex_overfull_boxes": false
+}

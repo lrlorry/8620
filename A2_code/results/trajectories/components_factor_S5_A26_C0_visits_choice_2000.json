@@ -5,23 +5,23 @@
   "action_mask": "full",
   "success": true,
   "termination": "success",
-  "steps": 14,
-  "total_reward": 172.0,
-  "discounted_return": 132.33956814848017,
-  "setup_seconds": 0.09170822810847312,
-  "planning_seconds": 209.91867898020428,
-  "mean_plan_seconds": 14.994191355728876,
-  "max_plan_seconds": 22.058135573985055,
+  "steps": 15,
+  "total_reward": 170.0,
+  "discounted_return": 130.92838510078525,
+  "setup_seconds": 0.11034953501075506,
+  "planning_seconds": 197.4111624690704,
+  "mean_plan_seconds": 13.160744164604694,
+  "max_plan_seconds": 19.310821532970294,
   "planning_budget": 3600.0,
   "num_drones": 2,
   "num_actions": 676,
   "obstacles": 0,
-  "simulations": 28000,
-  "generative_calls": 216051,
-  "mean_root_actions": 22.571428571428573,
-  "mean_top_share": 0.052250000000000005,
-  "greedy_fraction": 0.07142857142857142,
-  "mean_new_depth": 3.5936205540276656,
+  "simulations": 30000,
+  "generative_calls": 236402,
+  "mean_root_actions": 21.8,
+  "mean_top_share": 0.0551,
+  "greedy_fraction": 0.2,
+  "mean_new_depth": 3.7880753147700537,
   "final_state": [
     [
       11,
@@ -52,19 +52,57 @@
           0
         ]
       ],
-      "action": 642,
+      "action": 594,
       "reward": -2.0,
       "next_state": [
         [
           1,
+          1,
+          2,
+          0
+        ],
+        [
+          1,
+          3,
+          2,
+          0
+        ]
+      ],
+      "done": false,
+      "info": {
+        "num_collisions": 0,
+        "num_vehicle_collisions": 0,
+        "success": false
+      }
+    },
+    {
+      "state": [
+        [
+          1,
+          1,
+          2,
+          0
+        ],
+        [
+          1,
+          3,
+          2,
+          0
+        ]
+      ],
+      "action": 564,
+      "reward": -2.0,
+      "next_state": [
+        [
+          2,
           0,
-          1,
+          2,
           0
         ],
         [
           1,
-          4,
-          1,
+          2,
+          2,
           0
         ]
       ],
@@ -78,167 +116,15 @@
     {
       "state": [
         [
-          1,
+          2,
           0,
-          1,
-          0
-        ],
-        [
-          1,
-          4,
-          1,
-          0
-        ]
-      ],
-      "action": 463,
-      "reward": -2.0,
-      "next_state": [
-        [
-          1,
-          1,
-          1,
-          0
-        ],
-        [
-          1,
-          3,
-          1,
-          0
-        ]
-      ],
-      "done": false,
-      "info": {
-        "num_collisions": 0,
-        "num_vehicle_collisions": 0,
-        "success": false
-      }
-    },
-    {
-      "state": [
-        [
-          1,
-          1,
-          1,
-          0
-        ],
-        [
-          1,
-          3,
-          1,
-          0
-        ]
-      ],
-      "action": 644,
-      "reward": -2.0,
-      "next_state": [
-        [
-          2,
-          1,
-          0,
-          0
-        ],
-        [
-          2,
-          4,
-          1,
-          0
-        ]
-      ],
-      "done": false,
-      "info": {
-        "num_collisions": 0,
-        "num_vehicle_collisions": 0,
-        "success": false
-      }
-    },
-    {
-      "state": [
-        [
-          2,
-          1,
-          0,
-          0
-        ],
-        [
-          2,
-          4,
-          1,
-          0
-        ]
-      ],
-      "action": 519,
-      "reward": -2.0,
-      "next_state": [
-        [
-          3,
-          2,
-          1,
-          0
-        ],
-        [
-          3,
-          3,
-          2,
-          0
-        ]
-      ],
-      "done": false,
-      "info": {
-        "num_collisions": 0,
-        "num_vehicle_collisions": 0,
-        "success": false
-      }
-    },
-    {
-      "state": [
-        [
-          3,
-          2,
-          1,
-          0
-        ],
-        [
-          3,
-          3,
-          2,
-          0
-        ]
-      ],
-      "action": 617,
-      "reward": -2.0,
-      "next_state": [
-        [
-          4,
-          1,
           2,
           0
         ],
         [
-          4,
-          4,
-          1,
-          0
-        ]
-      ],
-      "done": false,
-      "info": {
-        "num_collisions": 0,
-        "num_vehicle_collisions": 0,
-        "success": false
-      }
-    },
-    {
-      "state": [
-        [
-          4,
           1,
           2,
-          0
-        ],
-        [
-          4,
-          4,
-          1,
+          2,
           0
         ]
       ],
@@ -246,15 +132,15 @@
       "reward": -2.0,
       "next_state": [
         [
-          5,
-          1,
+          3,
+          0,
           1,
           0
         ],
         [
-          3,
-          3,
-          1,
+          2,
+          2,
+          2,
           0
         ]
       ],
@@ -268,31 +154,69 @@
     {
       "state": [
         [
-          5,
-          1,
+          3,
+          0,
           1,
           0
         ],
         [
-          3,
-          3,
-          1,
+          2,
+          2,
+          2,
           0
         ]
       ],
-      "action": 538,
+      "action": 566,
       "reward": -2.0,
       "next_state": [
         [
-          6,
+          4,
+          0,
+          0,
+          0
+        ],
+        [
+          3,
+          2,
+          2,
+          0
+        ]
+      ],
+      "done": false,
+      "info": {
+        "num_collisions": 0,
+        "num_vehicle_collisions": 0,
+        "success": false
+      }
+    },
+    {
+      "state": [
+        [
+          4,
+          0,
+          0,
+          0
+        ],
+        [
+          3,
+          2,
+          2,
+          0
+        ]
+      ],
+      "action": 620,
+      "reward": -2.0,
+      "next_state": [
+        [
+          5,
           0,
           1,
           0
         ],
         [
           4,
-          2,
-          0,
+          3,
+          1,
           0
         ]
       ],
@@ -306,31 +230,69 @@
     {
       "state": [
         [
-          6,
+          5,
           0,
           1,
           0
         ],
         [
           4,
-          2,
-          0,
+          3,
+          1,
           0
         ]
       ],
-      "action": 647,
+      "action": 620,
+      "reward": -2.0,
+      "next_state": [
+        [
+          6,
+          0,
+          2,
+          0
+        ],
+        [
+          3,
+          2,
+          1,
+          0
+        ]
+      ],
+      "done": false,
+      "info": {
+        "num_collisions": 0,
+        "num_vehicle_collisions": 0,
+        "success": false
+      }
+    },
+    {
+      "state": [
+        [
+          6,
+          0,
+          2,
+          0
+        ],
+        [
+          3,
+          2,
+          1,
+          0
+        ]
+      ],
+      "action": 621,
       "reward": -2.0,
       "next_state": [
         [
           7,
           1,
-          0,
+          1,
           0
         ],
         [
-          5,
           3,
-          0,
+          3,
+          2,
           0
         ]
       ],
@@ -346,23 +308,99 @@
         [
           7,
           1,
+          1,
+          0
+        ],
+        [
+          3,
+          3,
+          2,
+          0
+        ]
+      ],
+      "action": 485,
+      "reward": -2.0,
+      "next_state": [
+        [
+          8,
           0,
+          0,
+          0
+        ],
+        [
+          4,
+          2,
+          2,
+          0
+        ]
+      ],
+      "done": false,
+      "info": {
+        "num_collisions": 0,
+        "num_vehicle_collisions": 0,
+        "success": false
+      }
+    },
+    {
+      "state": [
+        [
+          8,
+          0,
+          0,
+          0
+        ],
+        [
+          4,
+          2,
+          2,
+          0
+        ]
+      ],
+      "action": 649,
+      "reward": -2.0,
+      "next_state": [
+        [
+          9,
+          1,
+          1,
           0
         ],
         [
           5,
           3,
-          0,
+          2,
           0
         ]
       ],
-      "action": 597,
+      "done": false,
+      "info": {
+        "num_collisions": 0,
+        "num_vehicle_collisions": 0,
+        "success": false
+      }
+    },
+    {
+      "state": [
+        [
+          9,
+          1,
+          1,
+          0
+        ],
+        [
+          5,
+          3,
+          2,
+          0
+        ]
+      ],
+      "action": 539,
       "reward": -2.0,
       "next_state": [
         [
-          8,
+          10,
+          0,
           2,
-          1,
           0
         ],
         [
@@ -382,9 +420,9 @@
     {
       "state": [
         [
-          8,
+          10,
+          0,
           2,
-          1,
           0
         ],
         [
@@ -394,83 +432,7 @@
           0
         ]
       ],
-      "action": 563,
-      "reward": -2.0,
-      "next_state": [
-        [
-          9,
-          1,
-          0,
-          0
-        ],
-        [
-          7,
-          3,
-          1,
-          0
-        ]
-      ],
-      "done": false,
-      "info": {
-        "num_collisions": 0,
-        "num_vehicle_collisions": 0,
-        "success": false
-      }
-    },
-    {
-      "state": [
-        [
-          9,
-          1,
-          0,
-          0
-        ],
-        [
-          7,
-          3,
-          1,
-          0
-        ]
-      ],
-      "action": 571,
-      "reward": -2.0,
-      "next_state": [
-        [
-          10,
-          2,
-          1,
-          0
-        ],
-        [
-          8,
-          3,
-          1,
-          0
-        ]
-      ],
-      "done": false,
-      "info": {
-        "num_collisions": 0,
-        "num_vehicle_collisions": 0,
-        "success": false
-      }
-    },
-    {
-      "state": [
-        [
-          10,
-          2,
-          1,
-          0
-        ],
-        [
-          8,
-          3,
-          1,
-          0
-        ]
-      ],
-      "action": 564,
+      "action": 569,
       "reward": 98.0,
       "next_state": [
         [
@@ -480,7 +442,7 @@
           1
         ],
         [
-          9,
+          7,
           3,
           1,
           0
@@ -502,13 +464,89 @@
           1
         ],
         [
-          9,
+          7,
           3,
           1,
           0
         ]
       ],
-      "action": 572,
+      "action": 442,
+      "reward": -2.0,
+      "next_state": [
+        [
+          11,
+          1,
+          1,
+          1
+        ],
+        [
+          8,
+          2,
+          0,
+          0
+        ]
+      ],
+      "done": false,
+      "info": {
+        "num_collisions": 0,
+        "num_vehicle_collisions": 0,
+        "success": false
+      }
+    },
+    {
+      "state": [
+        [
+          11,
+          1,
+          1,
+          1
+        ],
+        [
+          8,
+          2,
+          0,
+          0
+        ]
+      ],
+      "action": 624,
+      "reward": -2.0,
+      "next_state": [
+        [
+          11,
+          1,
+          1,
+          1
+        ],
+        [
+          9,
+          3,
+          0,
+          0
+        ]
+      ],
+      "done": false,
+      "info": {
+        "num_collisions": 0,
+        "num_vehicle_collisions": 0,
+        "success": false
+      }
+    },
+    {
+      "state": [
+        [
+          11,
+          1,
+          1,
+          1
+        ],
+        [
+          9,
+          3,
+          0,
+          0
+        ]
+      ],
+      "action": 650,
       "reward": -2.0,
       "next_state": [
         [
@@ -519,8 +557,8 @@
         ],
         [
           10,
-          3,
-          2,
+          4,
+          1,
           0
         ]
       ],
@@ -541,12 +579,12 @@
         ],
         [
           10,
-          3,
-          2,
+          4,
+          1,
           0
         ]
       ],
-      "action": 520,
+      "action": 468,
       "reward": 98.0,
       "next_state": [
         [
@@ -572,185 +610,198 @@
   ],
   "searches": [
     {
-      "elapsed": 22.057088489993475,
+      "elapsed": 19.30969467095565,
       "simulations": 2000,
-      "generative_calls": 22384,
-      "nodes": 1998,
+      "generative_calls": 22485,
+      "nodes": 1999,
       "root_actions": 23,
       "root_visits": 2000,
       "top_share": 0.049,
       "greedy": 0,
-      "mean_new_depth": 3.6404606910365547,
-      "action": 642,
+      "mean_new_depth": 3.7567567567567566,
+      "action": 594,
       "budget": 3600.0
     },
     {
-      "elapsed": 21.83852503297385,
+      "elapsed": 18.017476483015344,
       "simulations": 2000,
-      "generative_calls": 22015,
-      "nodes": 2001,
-      "root_actions": 23,
-      "root_visits": 2000,
-      "top_share": 0.0495,
-      "greedy": 0,
-      "mean_new_depth": 3.8235,
-      "action": 463,
-      "budget": 3600.0
-    },
-    {
-      "elapsed": 21.943224223912694,
-      "simulations": 2000,
-      "generative_calls": 21808,
-      "nodes": 1998,
-      "root_actions": 23,
-      "root_visits": 2000,
-      "top_share": 0.0505,
-      "greedy": 0,
-      "mean_new_depth": 3.6840260390585877,
-      "action": 644,
-      "budget": 3600.0
-    },
-    {
-      "elapsed": 20.384075566893443,
-      "simulations": 2000,
-      "generative_calls": 20643,
-      "nodes": 2001,
-      "root_actions": 23,
-      "root_visits": 2000,
-      "top_share": 0.0495,
-      "greedy": 0,
-      "mean_new_depth": 3.9455,
-      "action": 519,
-      "budget": 3600.0
-    },
-    {
-      "elapsed": 17.990971499006264,
-      "simulations": 2000,
-      "generative_calls": 18805,
-      "nodes": 1993,
-      "root_actions": 23,
-      "root_visits": 2000,
-      "top_share": 0.052,
-      "greedy": 0,
-      "mean_new_depth": 3.9733935742971886,
-      "action": 617,
-      "budget": 3600.0
-    },
-    {
-      "elapsed": 16.455777467926964,
-      "simulations": 2000,
-      "generative_calls": 16843,
-      "nodes": 1915,
-      "root_actions": 23,
-      "root_visits": 2000,
-      "top_share": 0.0485,
-      "greedy": 0,
-      "mean_new_depth": 4.025078369905956,
-      "action": 566,
-      "budget": 3600.0
-    },
-    {
-      "elapsed": 18.016820949036628,
-      "simulations": 2000,
-      "generative_calls": 18205,
-      "nodes": 2000,
-      "root_actions": 23,
-      "root_visits": 2000,
-      "top_share": 0.049,
-      "greedy": 0,
-      "mean_new_depth": 4.0215107553776885,
-      "action": 538,
-      "budget": 3600.0
-    },
-    {
-      "elapsed": 15.58116468891967,
-      "simulations": 2000,
-      "generative_calls": 16375,
-      "nodes": 1896,
-      "root_actions": 23,
-      "root_visits": 2000,
-      "top_share": 0.05,
-      "greedy": 0,
-      "mean_new_depth": 4.0263852242744065,
-      "action": 647,
-      "budget": 3600.0
-    },
-    {
-      "elapsed": 12.860275333048776,
-      "simulations": 2000,
-      "generative_calls": 13888,
-      "nodes": 1653,
-      "root_actions": 23,
-      "root_visits": 2000,
-      "top_share": 0.0485,
-      "greedy": 0,
-      "mean_new_depth": 3.805084745762712,
-      "action": 597,
-      "budget": 3600.0
-    },
-    {
-      "elapsed": 11.101419346989132,
-      "simulations": 2000,
-      "generative_calls": 11959,
-      "nodes": 1352,
-      "root_actions": 23,
-      "root_visits": 2000,
-      "top_share": 0.0505,
-      "greedy": 0,
-      "mean_new_depth": 3.4011843079200594,
-      "action": 563,
-      "budget": 3600.0
-    },
-    {
-      "elapsed": 9.217185192042962,
-      "simulations": 2000,
-      "generative_calls": 9710,
-      "nodes": 986,
-      "root_actions": 23,
-      "root_visits": 2000,
-      "top_share": 0.048,
-      "greedy": 0,
-      "mean_new_depth": 3.120812182741117,
-      "action": 571,
-      "budget": 3600.0
-    },
-    {
-      "elapsed": 8.054189702030271,
-      "simulations": 2000,
-      "generative_calls": 8419,
-      "nodes": 785,
+      "generative_calls": 21696,
+      "nodes": 1996,
       "root_actions": 23,
       "root_visits": 2000,
       "top_share": 0.0515,
       "greedy": 0,
-      "mean_new_depth": 2.8341836734693877,
+      "mean_new_depth": 3.8847117794486214,
       "action": 564,
       "budget": 3600.0
     },
     {
-      "elapsed": 7.56522509700153,
+      "elapsed": 18.537560640019365,
       "simulations": 2000,
-      "generative_calls": 7951,
-      "nodes": 653,
+      "generative_calls": 21575,
+      "nodes": 1995,
       "root_actions": 23,
       "root_visits": 2000,
-      "top_share": 0.047,
+      "top_share": 0.052,
       "greedy": 0,
-      "mean_new_depth": 3.0153374233128836,
-      "action": 572,
+      "mean_new_depth": 3.9483450351053158,
+      "action": 566,
       "budget": 3600.0
     },
     {
-      "elapsed": 6.83407055598218,
+      "elapsed": 17.246942218975164,
       "simulations": 2000,
-      "generative_calls": 7046,
-      "nodes": 521,
+      "generative_calls": 20206,
+      "nodes": 2000,
+      "root_actions": 23,
+      "root_visits": 2000,
+      "top_share": 0.05,
+      "greedy": 0,
+      "mean_new_depth": 4.080540270135067,
+      "action": 566,
+      "budget": 3600.0
+    },
+    {
+      "elapsed": 14.87675707694143,
+      "simulations": 2000,
+      "generative_calls": 18210,
+      "nodes": 1997,
+      "root_actions": 23,
+      "root_visits": 2000,
+      "top_share": 0.05,
+      "greedy": 0,
+      "mean_new_depth": 4.153807615230461,
+      "action": 620,
+      "budget": 3600.0
+    },
+    {
+      "elapsed": 13.768433948978782,
+      "simulations": 2000,
+      "generative_calls": 16569,
+      "nodes": 1916,
+      "root_actions": 23,
+      "root_visits": 2000,
+      "top_share": 0.05,
+      "greedy": 0,
+      "mean_new_depth": 4.010443864229765,
+      "action": 620,
+      "budget": 3600.0
+    },
+    {
+      "elapsed": 15.137181215919554,
+      "simulations": 2000,
+      "generative_calls": 18038,
+      "nodes": 2001,
+      "root_actions": 23,
+      "root_visits": 2000,
+      "top_share": 0.049,
+      "greedy": 0,
+      "mean_new_depth": 4.091,
+      "action": 621,
+      "budget": 3600.0
+    },
+    {
+      "elapsed": 15.575949002057314,
+      "simulations": 2000,
+      "generative_calls": 18018,
+      "nodes": 2001,
+      "root_actions": 23,
+      "root_visits": 2000,
+      "top_share": 0.049,
+      "greedy": 0,
+      "mean_new_depth": 4.1705,
+      "action": 485,
+      "budget": 3600.0
+    },
+    {
+      "elapsed": 13.091945577063598,
+      "simulations": 2000,
+      "generative_calls": 16283,
+      "nodes": 1890,
+      "root_actions": 23,
+      "root_visits": 2000,
+      "top_share": 0.0495,
+      "greedy": 1,
+      "mean_new_depth": 4.125992588671255,
+      "action": 649,
+      "budget": 3600.0
+    },
+    {
+      "elapsed": 11.23067229706794,
+      "simulations": 2000,
+      "generative_calls": 13964,
+      "nodes": 1636,
+      "root_actions": 23,
+      "root_visits": 2000,
+      "top_share": 0.0495,
+      "greedy": 0,
+      "mean_new_depth": 3.77737003058104,
+      "action": 539,
+      "budget": 3600.0
+    },
+    {
+      "elapsed": 10.362543405033648,
+      "simulations": 2000,
+      "generative_calls": 12769,
+      "nodes": 1462,
+      "root_actions": 23,
+      "root_visits": 2000,
+      "top_share": 0.054,
+      "greedy": 0,
+      "mean_new_depth": 3.650924024640657,
+      "action": 569,
+      "budget": 3600.0
+    },
+    {
+      "elapsed": 9.172549497103319,
+      "simulations": 2000,
+      "generative_calls": 11270,
+      "nodes": 1199,
+      "root_actions": 23,
+      "root_visits": 2000,
+      "top_share": 0.05,
+      "greedy": 0,
+      "mean_new_depth": 3.5684474123539234,
+      "action": 442,
+      "budget": 3600.0
+    },
+    {
+      "elapsed": 8.23044239601586,
+      "simulations": 2000,
+      "generative_calls": 9976,
+      "nodes": 971,
       "root_actions": 17,
       "root_visits": 2000,
-      "top_share": 0.088,
+      "top_share": 0.0685,
+      "greedy": 0,
+      "mean_new_depth": 3.404123711340206,
+      "action": 624,
+      "budget": 3600.0
+    },
+    {
+      "elapsed": 7.1641231660032645,
+      "simulations": 2000,
+      "generative_calls": 8341,
+      "nodes": 697,
+      "root_actions": 17,
+      "root_visits": 2000,
+      "top_share": 0.0655,
       "greedy": 1,
-      "mean_new_depth": 2.9942307692307693,
-      "action": 520,
+      "mean_new_depth": 3.1767241379310347,
+      "action": 650,
+      "budget": 3600.0
+    },
+    {
+      "elapsed": 5.673359751934186,
+      "simulations": 2000,
+      "generative_calls": 7002,
+      "nodes": 514,
+      "root_actions": 17,
+      "root_visits": 2000,
+      "top_share": 0.089,
+      "greedy": 1,
+      "mean_new_depth": 3.021442495126706,
+      "action": 468,
       "budget": 3600.0
     }
   ]

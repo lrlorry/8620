@@ -15,6 +15,7 @@ import time
 
 import numpy as np
 from scipy.ndimage import distance_transform_edt
+from scipy.sparse import csr_matrix
 
 UNREACHABLE = 1e7   # statically disconnected from the goal
 RESERVED = 1e9      # another drone's planned or frozen cell
@@ -73,7 +74,8 @@ class MCTSPlanner:
                  exploration=0.35, widening=0.5, random_action_prob=0.15,
                  rollout_epsilon=0.10, max_simulations=2000,
                  guided=True, leaf_heuristic=True, progressive=True,
-                 risk_weight=1.0, switch_z=1.0, max_map_cells=150000, budget_cap=10.):
+                 risk_weight=1.0, switch_z=1.0, guidance='vi', max_map_cells=150000,
+                 max_value_cells=20000, budget_cap=10.):
         self.env = env
         self.cfg = env.get_config()
         self.goals = np.asarray(self.cfg.goal_positions, dtype=np.int32)
@@ -98,6 +100,9 @@ class MCTSPlanner:
         self.guided, self.leaf_heuristic, self.progressive = guided, leaf_heuristic, progressive
         self.budget_cap = float(budget_cap)
         self.switch_z = None if switch_z is None else float(switch_z)
+        if guidance not in ('dijkstra', 'vi'):
+            raise ValueError(f'Unknown guidance: {guidance}')
+        self.guidance = guidance
         self.rng = np.random.default_rng(seed)
         self.gamma = float(self.cfg.discount_factor)
         self.scale = max(1., self.count * (abs(self.cfg.goal_reward) +
@@ -105,7 +110,8 @@ class MCTSPlanner:
         # A collision costs its penalty and forfeits the goal reward; express it in step costs.
         loss = abs(self.cfg.collision_penalty) + abs(self.cfg.goal_reward)
         self.risk_weight = float(risk_weight)
-        self.risk_scale = self.risk_weight * loss / max(abs(self.cfg.step_cost), 1e-3 * loss, 1e-9)
+        self.risk_unit = max(abs(self.cfg.step_cost), 1e-3 * loss, 1e-9)
+        self.risk_scale = self.risk_weight * loss / self.risk_unit
         self.blocked = {tuple(p) for p in (self.cfg.obstacle_cells or [])}
         self.maps = self.costs = self.clearance = self.free = None
         self.land_intended = self.land_slip = self.departure_risk = None
@@ -117,6 +123,9 @@ class MCTSPlanner:
             self._slip_model(free)
             self.maps = [self._distance_map(tuple(g), free) for g in self.goals]
             self.costs = [self._cost_map(tuple(g), free, m) for g, m in zip(self.goals, self.maps)]
+        self.values = self.q_history = None
+        if guidance == 'vi' and self.free is not None and self.free.size <= max_value_cells:
+            self._value_iteration()
         self._options_cache, self._adjacent, self._frozen_maps = {}, {}, {}
         self.steps = 0
         self.last_stats = {}
@@ -139,6 +148,51 @@ class MCTSPlanner:
         self.land_intended, self.land_slip = success / mass, slip / mass
         # Probability that one departure (towards a free cell) slips into an obstacle.
         self.departure_risk = self._neighbour_sum(~free) * self.land_slip
+
+    def _value_iteration(self):
+        # Finite-horizon single-drone values on the supplied slip law (value iteration); each
+        # drone is solved alone, so collisions between drones are left to the search.
+        cells = np.argwhere(self.free)
+        index = np.full(self.shape, -1, dtype=np.int64)
+        index[tuple(cells.T)] = np.arange(len(cells))
+        n, B, A = len(cells), len(self.physical_vectors), self.base
+        commands = [int(np.flatnonzero((self.physical_vectors == v).all(axis=1))[0]) for v in self.vectors]
+        targets = cells[:, None, :] + self.physical_vectors[None, :, :]
+        valid = ((targets >= 0) & (targets < np.asarray(self.shape))).all(axis=2)
+        clipped = np.minimum(np.maximum(targets, 0), np.asarray(self.shape) - 1)
+        lands = valid & self.free[tuple(np.moveaxis(clipped, 2, 0))]
+        target_index = np.where(lands, index[tuple(np.moveaxis(clipped, 2, 0))], -1)
+        clearance = self.clearance[tuple(cells.T)]
+        success = clearance / np.maximum(clearance + float(self.cfg.alpha), 1e-12)
+        rows, cols, probs, crash = [], [], [], np.zeros(n * A)
+        for a, j in enumerate(commands):
+            weights = np.repeat(((1 - success) / max(1, B - 1))[:, None], B, axis=1)
+            weights[:, j] = success
+            weights[~valid] = 0.
+            weights /= np.maximum(weights.sum(axis=1, keepdims=True), 1e-12)
+            crash[a::A] = (weights * (valid & ~lands)).sum(axis=1)
+            k, b = np.nonzero(lands & (weights > 0))
+            rows.append(k * A + a); cols.append(target_index[k, b]); probs.append(weights[k, b])
+        P = csr_matrix((np.concatenate(probs), (np.concatenate(rows), np.concatenate(cols))), shape=(n * A, n))
+        horizon = max(1, int(self.cfg.max_num_steps))
+        if n * A * (horizon + 1) * len(self.goals) > 2.5e7:
+            return  # Too large to keep per-horizon action values; use the Dijkstra guidance.
+        step, hit, prize = self.cfg.step_cost, self.cfg.collision_penalty, self.cfg.goal_reward
+        self.value_index, self.values, self.q_history = index, [], []
+        for goal in self.goals:
+            g = index[tuple(goal)]
+            reward = step + hit * crash + (prize * P[:, g].toarray().ravel() if g >= 0 else 0.)
+            V, history = np.zeros(n), [np.zeros(n)]
+            actions = [np.zeros((n, A), dtype=np.float32)]
+            for _ in range(horizon):
+                Q = (reward + self.gamma * (P @ V)).reshape(n, A)
+                V = Q.max(axis=1)
+                if g >= 0:
+                    V[g] = 0.  # Arrival is terminal for this drone; its reward is in the step.
+                history.append(V)
+                actions.append(Q.astype(np.float32))
+            self.values.append(np.asarray(history))  # values[i][h]: h steps left
+            self.q_history.append(np.asarray(actions))  # q_history[i][h]: action values, h left
 
     def _distance_map(self, goal, free):
         distance = np.full(self.shape, -1, dtype=np.int32)
@@ -220,8 +274,11 @@ class MCTSPlanner:
             self._frozen_maps[key] = self._distance_map(tuple(self.goals[i]), free)
         return self._frozen_maps[key][tuple(state[i, :3])] < 0
 
-    def _options(self, i, position):
-        key = (i, *map(int, position))
+    def _options(self, i, position, remaining=None):
+        cell = tuple(map(int, position))
+        if self.q_history is not None:
+            return self._value_options(i, cell, remaining)
+        key = (i, *cell)
         if key in self._options_cache:
             return self._options_cache[key]
         targets = position + self.vectors
@@ -235,6 +292,28 @@ class MCTSPlanner:
                 if self.clearance is not None:
                     scores[j] += 0.3 / max(1., self.clearance[point])
         result = [tuple(map(int, q)) for q in targets], scores, int(np.count_nonzero(scores < INVALID))
+        self._options_cache[key] = result
+        return result
+
+    def _value_options(self, i, cell, remaining):
+        # Scores are the single-drone action values for the steps actually left (step-cost units).
+        longest = len(self.q_history[i]) - 1
+        h = longest if remaining is None else max(1, min(longest, int(remaining)))
+        key = (i, *cell, h)
+        if key in self._options_cache:
+            return self._options_cache[key]
+        static = self._options_cache.get((i, *cell))
+        if static is None:
+            targets = np.asarray(cell) + self.vectors
+            inside = ((targets >= 0) & (targets < np.asarray(self.shape))).all(axis=1)
+            valid = np.array([ok and tuple(map(int, t)) not in self.blocked for ok, t in zip(inside, targets)])
+            tie = 0.025 * np.abs(targets - self.goals[i]).sum(axis=1)
+            static = [tuple(map(int, t)) for t in targets], valid, tie
+            self._options_cache[(i, *cell)] = static
+        targets, valid, tie = static
+        q = self.q_history[i][h][self.value_index[cell]]
+        scores = np.where(valid, -q / self.risk_unit + tie, INVALID)
+        result = targets, scores, int(valid.sum())
         self._options_cache[key] = result
         return result
 
@@ -256,7 +335,7 @@ class MCTSPlanner:
             penalty = penalty + self.land_slip[other] * mask
         return self.risk_scale * self.land_intended[position] * penalty
 
-    def _proposal(self, state, randomize=True, explore=None):
+    def _proposal(self, state, randomize=True, explore=None, remaining=None):
         reached = state[:, 3].astype(bool)
         if not self.guided:
             digits = self.rng.integers(self.base, size=self.count)
@@ -271,7 +350,7 @@ class MCTSPlanner:
             active = self.rng.permutation(active)
         digits = np.zeros(self.count, dtype=int)
         for i in active:
-            targets, cost, _ = self._options(int(i), state[i, :3])
+            targets, cost, _ = self._options(int(i), state[i, :3], remaining)
             cost = cost.copy()
             for j, target in enumerate(targets):
                 if target in reserved:
@@ -312,6 +391,16 @@ class MCTSPlanner:
             horizon = remaining
         horizon = int(horizon)
         costs = horizon if self.gamma == 1 else (1 - self.gamma**horizon)/(1-self.gamma)
+        if self.values is not None:
+            # Single-drone values for active drones; reached drones keep paying the step cost.
+            h = min(int(remaining), len(self.values[0]) - 1)
+            stuck = h if self.gamma == 1 else (1 - self.gamma**h)/(1-self.gamma)
+            value = self.cfg.step_cost * (self.count - len(distances)) * costs
+            for i in range(self.count):
+                if not state[i, 3]:
+                    value += (self.cfg.step_cost * stuck if self._cut_off(i, state) else
+                              self.values[i][h][self.value_index[tuple(state[i, :3])]])
+            return float(value) / self.scale
         value = self.cfg.step_cost * self.count * costs
         value += self.cfg.goal_reward * sum(self.gamma**(int(d)-1)
                                             for d in distances if 1 <= d <= remaining)
@@ -330,7 +419,7 @@ class MCTSPlanner:
             if time.perf_counter() >= self.deadline:
                 break
             explore = self.rng.random() < self.rollout_epsilon
-            action = self._proposal(state, randomize=False, explore=explore)
+            action = self._proposal(state, randomize=False, explore=explore, remaining=remaining-len(rewards))
             state, reward, done, _ = self._simulate(state, action)
             rewards.append(float(reward)/self.scale)
             if done:
@@ -351,14 +440,14 @@ class MCTSPlanner:
         width = (max(1, math.ceil(self.widening * math.sqrt(node.visits+1)))
                  if self.progressive else math.inf)
         if len(node.actions) < width and len(node.actions) < self._effective_actions(state):
-            action = self._proposal(state, randomize=bool(node.actions))
+            action = self._proposal(state, randomize=bool(node.actions), remaining=remaining)
             for _ in range(12):
                 if action not in node.actions:
                     node.actions[action] = Edge()
                     break
-                action = self._proposal(state, randomize=True)
+                action = self._proposal(state, randomize=True, remaining=remaining)
         if not node.actions:
-            action = self._proposal(state, randomize=False)
+            action = self._proposal(state, randomize=False, remaining=remaining)
             node.actions[action] = Edge()
         unseen = [a for a, edge in node.actions.items() if edge.visits == 0]
         if unseen:
@@ -412,9 +501,9 @@ class MCTSPlanner:
         self.calls, self.nodes, self.depth_sum = 0, 1, 0
         if len(self._options_cache) > 50000:
             self._options_cache.clear()
-        fallback = self._proposal(state, randomize=False)
-        root = Node()
         remaining = max(0, int(self.cfg.max_num_steps) - self.steps)
+        fallback = self._proposal(state, randomize=False, remaining=remaining)
+        root = Node()
         completed = 0
         try:
             while (completed < self.max_simulations and remaining > 0

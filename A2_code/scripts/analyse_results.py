@@ -26,12 +26,13 @@ REPORT=next((p for p in (ROOT/'report',ROOT.parent/'A2')
              if (p/'u8076655_A2_report.tex').exists()),ROOT/'report')
 TABLES=REPORT/'tables'
 FIGURES=REPORT/'figures'
-CHOSEN='anchor_z1_w0.5'  # development-set arm adopted as the solver default
-EXPECTED={'regression':360,'random':160,'factorial':540,'components':880,'budget':400,'control':160,'baseline':520,'supplement':280}
-VARIANTS=['no_guidance','no_leaf','no_widening','no_risk','visits_choice','heuristic']
+CHOSEN='vi'  # development-set arm adopted as the solver default (round 3)
+EXPECTED={'regression':360,'random':160,'factorial':540,'components':1040,'budget':400,'control':160,'baseline':520,'supplement':280}
+VARIANTS=['no_guidance','no_leaf','no_widening','no_risk','visits_choice','max_q','heuristic']
 NAMES={'full':'Full solver','no_guidance':'Uniform proposals/rollouts','no_leaf':'Zero leaf value',
-       'no_widening':'No progressive widening','no_risk':'Risk-free guidance',
-       'visits_choice':'Most-visited final action','heuristic':'Guided policy, no search'}
+       'no_widening':'No progressive widening','no_risk':'No inter-drone risk term',
+       'visits_choice':'Most-visited final action','max_q':'Largest mean-Q final action',
+       'heuristic':'Guided policy, no search'}
 SERIES=['#2a78d6','#eb6834','#1baf7a','#eda100']  # validated categorical slots 1-4 (light surface)
 INK,MUTED='#0b0b0b','#52514e'
 INT_FIELDS=('seed','steps','simulations','generative_calls','num_actions','num_drones','obstacles',
@@ -130,6 +131,45 @@ def seed_means(rows,metric,seeds):
 
 def metric_of(row,metric):
     return 100.*row['success'] if metric=='success' else row[metric]
+
+
+def seed_cluster_effect(pairs,metric):
+    """B minus A, resampling whole seed clusters rather than correlated episodes.
+
+    Retain the episode-weighted mean when suites use different seed counts.
+    Every resample includes all conditions that used a selected execution seed.
+    """
+    blocks=defaultdict(list)
+    for a,b in pairs:
+        if a['seed'] != b['seed']:
+            raise ValueError('A paired comparison must use the same execution seed')
+        blocks[b['seed']].append(metric_of(b,metric)-metric_of(a,metric))
+    if len(blocks)<2:
+        raise ValueError('A seed-cluster interval requires at least two seeds')
+    values=[blocks[s] for s in sorted(blocks)]
+    sums=np.array([sum(v) for v in values]);counts=np.array([len(v) for v in values])
+    rng=np.random.default_rng(4620)
+    selected=rng.integers(len(values),size=(20000,len(values)))
+    draws=sums[selected].sum(axis=1)/counts[selected].sum(axis=1)
+    lower,upper=np.quantile(draws,[.025,.975])
+    return dict(mean=float(sums.sum()/counts.sum()),lower=float(lower),upper=float(upper),
+                n=int(counts.sum()),seed_blocks=len(values),resamples=20000,
+                method='percentile bootstrap of execution-seed clusters')
+
+
+def unique_episode_pairs(pairs):
+    """Count repeated conditions in different suites once; reject conflicting copies."""
+    unique={}
+    for a,b in pairs:
+        key=tuple(b[k] for k in ('scenario','variant','simulation_cap','seed'))
+        if key in unique:
+            for previous,current in zip(unique[key],(a,b)):
+                for field in ('success','steps','penalized_steps','discounted_return'):
+                    if previous[field] != current[field]:
+                        raise ValueError(f'Conflicting duplicate episode {key}: {field}')
+        else:
+            unique[key]=(a,b)
+    return list(unique.values())
 
 
 def analyse_factorial(rows,numbers,summary):
@@ -341,17 +381,19 @@ def analyse_baseline(regression,random,baseline,numbers,summary):
     out={}
     for tag,keep in (('Multi',lambda r:r['num_drones']>=2),('Single',lambda r:r['num_drones']==1)):
         pairs=[(r,greedy[r['scenario'],r['seed']]) for r in full if keep(r)]
-        delta=interval([g['penalized_steps']-f['penalized_steps'] for f,g in pairs])
+        delta=seed_cluster_effect(pairs,'penalized_steps')
+        success_delta=seed_cluster_effect(pairs,'success')
         rescued=sum(f['success'] and not g['success'] for f,g in pairs)
         lost=sum(g['success'] and not f['success'] for f,g in pairs)
         out[tag]=dict(pairs=len(pairs),full=sum(f['success'] for f,_ in pairs),
-                      greedy=sum(g['success'] for _,g in pairs),rescued=rescued,lost=lost,delta=delta)
+                      greedy=sum(g['success'] for _,g in pairs),rescued=rescued,lost=lost,
+                      delta=delta,success_delta=success_delta)
         numbers[f'Base{tag}Pairs']=len(pairs);numbers[f'Base{tag}Full']=out[tag]['full']
         numbers[f'Base{tag}Greedy']=out[tag]['greedy'];numbers[f'Base{tag}Rescued']=rescued
         numbers[f'Base{tag}Lost']=lost;numbers[f'Base{tag}DL']=f"{delta['mean']:+.1f}"
-        discordant=rescued+lost  # exact McNemar test on the discordant pairs
-        numbers[f'Base{tag}P']=f"{stats.binomtest(rescued,discordant).pvalue:.2f}" if discordant else '1.00'
         numbers[f'Base{tag}DLci']=f"[{delta['lower']:+.1f}, {delta['upper']:+.1f}]"
+        numbers[f'Base{tag}DP']=f"{success_delta['mean']:+.1f}"
+        numbers[f'Base{tag}DPci']=f"[{success_delta['lower']:+.1f}, {success_delta['upper']:+.1f}]"
     summary['baseline']=out
     path=ROOT/'results/planner_equivalence.json'
     if path.exists():
@@ -416,6 +458,11 @@ def analyse_supplement(rows,numbers,summary):
     # Horizon effect in the wall-gap case: successful runs versus the shortest route.
     gap=[r['steps'] for r in by['supp_single_wallgap_2d','full'] if r['success']]
     numbers['SuppGapSteps']=f"{np.mean(gap):.0f}"
+    archived=ROOT/'results/guidance_dijkstra/supplement.csv'
+    if archived.exists():
+        old=[r for r in read('supplement',folder='results/guidance_dijkstra')
+             if r['scenario']=='supp_single_wallgap_2d' and r['variant']=='full' and r['success']]
+        numbers['SuppGapStepsA']=f"{np.mean([r['steps'] for r in old]):.0f}"
     route=yaml.safe_load((ROOT/'environments/supp_single_wallgap_2d.yaml').read_text())
     numbers['SuppGapRoute']=max(abs(g-s) for g,s in zip(route['goal_positions'][0],route['start_positions'][0]))
     probe=ROOT/'results/probes/risk_leaf_probe.jsonl'
@@ -443,14 +490,58 @@ def analyse_demo_budget(numbers):
         numbers['DemoMaxPlan']=f"{max(d['elapsed'] for d in decisions):.2f}"
 
 
+def analyse_guidance(suites,numbers,summary):
+    # Submitted value-iteration guidance (B) versus the archived Dijkstra-guidance runs (A),
+    # paired on scenario, variant, simulation cap and seed.
+    folder=ROOT/'results/guidance_dijkstra'
+    if not folder.exists():return
+    labels=[('factorial','S1 factorial'),('control','S2 controls'),('budget','S4 budget'),
+            ('random','S5 layouts'),('regression','Regression'),('supplement','Supplementary'),
+            ('baseline','Base policy, no search')]
+    table=[];pooled=[]
+    for suite,label in labels:
+        if not (folder/f'{suite}.csv').exists():continue
+        old={(r['scenario'],r['variant'],r['simulation_cap'],r['seed']):r
+             for r in read(suite,folder='results/guidance_dijkstra')}
+        pairs=[(old[k],r) for r in suites[suite]
+               for k in [(r['scenario'],r['variant'],r['simulation_cap'],r['seed'])] if k in old]
+        if suite=='supplement':
+            pairs=[(a,b) for a,b in pairs if b['variant']=='full']
+        wins=sum(b['success'] and not a['success'] for a,b in pairs)
+        losses=sum(a['success'] and not b['success'] for a,b in pairs)
+        delta=seed_cluster_effect(pairs,'penalized_steps')
+        table.append([label,len(pairs),sum(a['success'] for a,_ in pairs),sum(b['success'] for _,b in pairs),
+                      wins,losses,ci(delta,digits=2)])
+        if suite!='baseline':pooled+=pairs
+    repeated=len(pooled)
+    pooled=unique_episode_pairs(pooled)
+    wins=sum(b['success'] and not a['success'] for a,b in pooled)
+    losses=sum(a['success'] and not b['success'] for a,b in pooled)
+    delta=seed_cluster_effect(pooled,'penalized_steps')
+    success_delta=seed_cluster_effect(pooled,'success')
+    table.append(['Combined (unique)',len(pooled),sum(a['success'] for a,_ in pooled),sum(b['success'] for _,b in pooled),
+                  wins,losses,ci(delta,digits=2)])
+    latex_rows('guidance_rows',table)
+    numbers['GuidePairs']=f'{len(pooled):,}';numbers['GuideA']=sum(a['success'] for a,_ in pooled)
+    numbers['GuideB']=sum(b['success'] for _,b in pooled);numbers['GuideWins']=wins;numbers['GuideLosses']=losses
+    numbers['GuideDL']=f"{delta['mean']:+.1f}";numbers['GuideDLci']=f"[{delta['lower']:+.1f}, {delta['upper']:+.1f}]"
+    numbers['GuideDP']=f"{success_delta['mean']:+.1f}"
+    numbers['GuideDPci']=f"[{success_delta['lower']:+.1f}, {success_delta['upper']:+.1f}]"
+    numbers['GuideDuplicates']=repeated-len(pooled)
+    summary['guidance']=dict(pairs=len(pooled),duplicate_pairs_removed=repeated-len(pooled),
+                             wins=wins,losses=losses,delta=delta,success_delta=success_delta)
+
+
 def analyse_tuning(numbers,summary):
     rows,order=[],[]
-    for index in (1,2):
+    for index in (1,2,3):
         if (ROOT/f'results/dev/tuning_r{index}.csv').exists():
             batch=read(f'tuning_r{index}',folder='results/dev')
             for r in batch:r['round']=index
             rows+=batch;order+=[v for v in dict.fromkeys(r['variant'] for r in batch)]
     if not rows:return
+    numbers['DevEpisodes']=f'{len(rows):,}'
+    numbers['DevSettings']=len(order)
     reference={(r['scenario'],r['seed']):r for r in rows if r['variant']==CHOSEN}
     table=[]
     for arm in order:
@@ -528,6 +619,11 @@ def figures(marginals,components,curves,short):
 def main():
     TABLES.mkdir(parents=True,exist_ok=True);FIGURES.mkdir(parents=True,exist_ok=True)
     suites={name:read(name,n) for name,n in EXPECTED.items()}
+    planner_hash=hashlib.sha256((ROOT/'planner.py').read_bytes()).hexdigest()
+    for suite in suites:
+        metadata=json.loads((ROOT/f'results/{suite}.meta.json').read_text())
+        if metadata['planner_sha256'] != planner_hash:
+            raise ValueError(f'{suite}: evaluation planner hash does not match planner.py')
     numbers=Numbers();summary={}
     for suite,rows in suites.items():
         summary[suite+'_cells']={'|'.join(map(str,k)):summarize(g) for k,g in
@@ -540,6 +636,7 @@ def main():
     analyse_regression(suites['regression'],suites['baseline'],numbers,summary)
     analyse_baseline(suites['regression'],suites['random'],suites['baseline'],numbers,summary)
     analyse_supplement(suites['supplement'],numbers,summary)
+    analyse_guidance(suites,numbers,summary)
     analyse_demo_budget(numbers)
     analyse_tuning(numbers,summary)
     total=sum(map(len,suites.values()))
