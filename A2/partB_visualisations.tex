@@ -3,31 +3,40 @@
 Stored seed-0 full-solver traces illustrate scenario types, including a
 collision; they do not replace B4's repeated-run statistics. Squares mark
 starts, stars goals, and crosses unfinished drones' returned positions.
-Collision targets are not logged. Only the first sheet uses the demo's
-9.5\,s allowance; later sheets use fixed-simulation experiments with relaxed
-deadlines. The complete gallery covers all 76 evaluation configurations
+Collision targets are not logged. Each row identifies either the demo's
+9.5\,s allowance or a fixed-simulation experiment with a relaxed
+deadline. The complete gallery covers all 76 evaluation configurations
 and the supplied example, excluding development layouts.
 
 \begin{figure}[H]
 \centering
 \includegraphics[width=\linewidth]{figures/scenario_examples_1.pdf}
 \caption{Default-budget demonstrations: open navigation, the supplied
-example, strong wind and four-drone 3D flight.}
+two-drone example and strong wind.}
 \end{figure}
 
 \clearpage
 \begin{figure}[H]
 \centering
 \includegraphics[width=\linewidth]{figures/scenario_examples_2.pdf}
-\caption{Fixed-simulation examples: altitude detours, narrow passage,
-clutter and a wall gap. The wall-gap layout has seven obstacles.}
+\caption{Four-drone 3D flight under the demo budget, followed by
+fixed-simulation examples of an altitude detour and a narrow passage.}
 \end{figure}
 
 \clearpage
 \begin{figure}[H]
 \centering
 \includegraphics[width=\linewidth]{figures/scenario_examples_3.pdf}
-\caption{Fixed-simulation examples: an occupied goal, separate altitude
-layers, a shared corridor and a collision. The corridor has eight obstacles.
-Timings on this and the preceding sheet are not demo deadline measurements.}
+\caption{Fixed-simulation examples: clutter, a wall gap and an occupied
+goal. The wall-gap layout has seven obstacles; these timings are not demo
+deadline measurements.}
+\end{figure}
+
+\clearpage
+\begin{figure}[H]
+\centering
+\includegraphics[width=\linewidth]{figures/scenario_examples_4.pdf}
+\caption{Fixed-simulation examples: separate altitude layers, a shared
+corridor and a collision. The corridor has eight obstacles; these timings
+are not demo deadline measurements.}
 \end{figure}

@@ -6,6 +6,7 @@ and component effects are computed on paired seed blocks, not pooled IID trials.
 
 from collections import defaultdict
 import csv
+import hashlib
 import json
 import math
 import os
@@ -229,6 +230,8 @@ def analyse_components(rows,full_rows,numbers,summary):
             numbers['Comp'+variant.replace('_','').title()+f+'hi']=f"{result[f]['high']['mean']:+.1f}"
             numbers['Comp'+variant.replace('_','').title()+f+'int']=f"[{i['lower']:+.1f}, {i['upper']:+.1f}]"
     latex_rows('component_rows',table)
+    latex_rows('component_overall_rows',[row[:3] for row in table])
+    latex_rows('component_complexity_rows',[[row[0]]+row[3:] for row in table])
     latex_rows('component_raw_rows',raw)
     summary['components']=effects
     return effects
@@ -364,10 +367,31 @@ def analyse_supplement(rows,numbers,summary):
             'supp_layers_cross_2d':'Two layers, crossing, 2 drones','supp_layers_four_2d':'Two layers, 4 drones',
             'supp_yield_corridor':'Goal inside corridor, 2 drones'}
     totals={'full':[0,0],'heuristic':[0,0]}
+    path=ROOT/'results/ceilings.json'
+    ceilings=json.loads(path.read_text()) if path.exists() else {}
+    review_path=ROOT/'results/ceiling_validation.json'
+    review=json.loads(review_path.read_text()) if review_path.exists() else None
+    if review:
+        sources=review['source_hashes']
+        for key,source in [('ceilings',path),('config',ROOT/'environments/supp_yield_corridor.yaml'),
+                           ('compute_ceilings',ROOT/'scripts/compute_ceilings.py'),
+                           ('simulator',ROOT/'multi_drone.py')]:
+            assert hashlib.sha256(source.read_bytes()).hexdigest()==sources[key], source
+    ceiling_table=[]
     for name,label in labels.items():
         full,greedy=summarize(by[name,'full']),summarize(by[name,'heuristic'])
         alpha=by[name,'full'][0]['alpha'] or ''
         s=full['success']
+        if 'ceiling' in ceilings.get(name,{}):
+            entry=ceilings[name]
+            successes=round(entry['simulated_optimal']*2000)
+            assert abs(successes/2000-entry['simulated_optimal'])<1e-12
+            n=2000
+            if name=='supp_yield_corridor' and review:
+                successes=review['combined']['successes'];n=review['combined']['n']
+            check=wilson(successes,n)
+            ceiling_table.append([label,f"{100*entry['ceiling']:.1f}",f"{successes:,}/{n:,}",
+                                  f"[{100*check['lower']:.1f}, {100*check['upper']:.1f}]"])
         table.append([label,count(full),f"[{100*s['lower']:.0f}, {100*s['upper']:.0f}]",count(greedy),
                       full['obstacle_collisions'],full['vehicle_collisions'],full['timeouts'],fmt(full['penalized_steps'])])
         for variant,x in (('full',full),('heuristic',greedy)):
@@ -377,6 +401,17 @@ def analyse_supplement(rows,numbers,summary):
     numbers['SuppFull']=f"{totals['full'][0]}/{totals['full'][1]}"
     numbers['SuppGreedy']=f"{totals['heuristic'][0]}/{totals['heuristic'][1]}"
     numbers['SuppTimeouts']=sum(r['termination']=='timeout' for r in rows)
+    latex_rows('ceiling_rows',ceiling_table)
+    for name,tag in (('supp_single_wallgap_2d','Gap'),('supp_yield_corridor','Corridor')):
+        if name in ceilings:
+            numbers[f'Ceil{tag}']=f"{100*ceilings[name]['ceiling']:.1f}"
+            numbers[f'Ceil{tag}Sim']=f"{100*ceilings[name]['simulated_optimal']:.1f}"
+    if 'random_15_N4' in ceilings:
+        numbers['CeilFourSingle']=f"{100*ceilings['random_15_N4']['min_single']:.0f}"
+        numbers['CeilFourUncoord']=f"{100*ceilings['random_15_N4']['uncoordinated_joint_success']:.0f}"
+        successes=round(1000*ceilings['random_15_N4']['uncoordinated_joint_success'])
+        check=wilson(successes,1000)
+        numbers['CeilFourUncoordCI']=f"[{100*check['lower']:.1f}, {100*check['upper']:.1f}]\\%"
     summary['supplement']=totals
     # Horizon effect in the wall-gap case: successful runs versus the shortest route.
     gap=[r['steps'] for r in by['supp_single_wallgap_2d','full'] if r['success']]
@@ -391,6 +426,21 @@ def analyse_supplement(rows,numbers,summary):
             numbers[f'Probe{tag}']=f"{sum(t['term']=='success' for t in mine)}/{len(mine)}"
             steps=[t['steps'] for t in mine if t['cfg']=='supp_single_wallgap_2d.yaml' and t['term']=='success']
             numbers[f'Probe{tag}GapSteps']=f"{np.mean(steps):.0f}"
+
+
+def analyse_demo_budget(numbers):
+    # Single-process default runs (release_validation.py): which limit ended each decision.
+    decisions=[]
+    for name in ('demo_open_2d','example_config','strong_wind','demo_four_3d'):
+        path=ROOT/f'results/{name}_default.json'
+        if path.exists():
+            decisions+=json.loads(path.read_text())['searches']
+    if decisions:
+        capped=sum(d['simulations']>=2000 for d in decisions)
+        numbers['DemoDecisions']=len(decisions);numbers['DemoCapped']=capped
+        numbers['DemoCapShare']=f"{100*capped/len(decisions):.0f}"
+        numbers['DemoMinSims']=f"{min(d['simulations'] for d in decisions):,}"
+        numbers['DemoMaxPlan']=f"{max(d['elapsed'] for d in decisions):.2f}"
 
 
 def analyse_tuning(numbers,summary):
@@ -415,10 +465,11 @@ def analyse_tuning(numbers,summary):
                       '---' if arm==CHOSEN else ci(paired('penalized_steps'))])
         numbers['Tune'+''.join(ch for ch in arm.title() if ch.isalnum())]=count(x)
     latex_rows('tuning_rows',table)
+    latex_rows('tuning_summary_rows',[[row[0],row[1],row[2],row[5],row[7]] for row in table])
 
 
 def figures(marginals,components,curves,short):
-    plt.rcParams.update({'font.family':'serif','mathtext.fontset':'cm','font.size':9,'axes.edgecolor':MUTED,
+    plt.rcParams.update({'font.family':'serif','mathtext.fontset':'cm','font.size':10,'axes.edgecolor':MUTED,
                          'axes.labelcolor':INK,'xtick.color':MUTED,'ytick.color':MUTED,'text.color':INK,
                          'axes.spines.top':False,'axes.spines.right':False,'pdf.fonttype':42})
     fig,axes=plt.subplots(2,3,figsize=(7,4.2),sharey='row',layout='constrained')
@@ -439,7 +490,7 @@ def figures(marginals,components,curves,short):
     axes[0,0].set_ylabel('Success rate (%)');axes[1,0].set_ylabel('Penalised steps $L$')
     fig.savefig(FIGURES/'complexity_effects.pdf',bbox_inches='tight');fig.savefig(FIGURES/'complexity_effects.png',dpi=200,bbox_inches='tight');plt.close(fig)
 
-    fig,axes=plt.subplots(1,3,figsize=(7,2.9),sharey=True,layout='constrained')
+    fig,axes=plt.subplots(1,3,figsize=(7,3.25),sharey=True,layout='constrained')
     y=np.arange(len(VARIANTS))
     for ax,(factor,(lo,hi)) in zip(axes,[('S',('$n_y=5$','$n_y=20$')),('A',('$|A|=36$','$|A|=676$')),('C',('$|O|=0$','$|O|=5$'))]):
         for k,(level,label,marker,offset) in enumerate([('low',lo,'o',-.15),('high',hi,'s',.15)]):
@@ -448,13 +499,13 @@ def figures(marginals,components,curves,short):
                         color=SERIES[k],markersize=5,capsize=2,linewidth=1.5,label=label,
                         markerfacecolor='white' if k==0 else SERIES[k])
         ax.axvline(0,color=MUTED,linewidth=.8);ax.grid(axis='x',alpha=.25)
-        ax.legend(frameon=False,fontsize=7.5,loc='lower right')
+        ax.legend(frameon=False,fontsize=8.5,loc='lower right')
         ax.set_title({'S':'State space','A':'Action space','C':'Clutter'}[factor])
         ax.set_xlabel(r'$\Delta L$ vs full solver')
     axes[0].set_yticks(y,[NAMES[v] for v in VARIANTS]);axes[0].invert_yaxis()
     fig.savefig(FIGURES/'component_effects.pdf',bbox_inches='tight');fig.savefig(FIGURES/'component_effects.png',dpi=200,bbox_inches='tight');plt.close(fig)
 
-    fig,axes=plt.subplots(1,2,figsize=(7,2.9),layout='constrained')
+    fig,axes=plt.subplots(1,2,figsize=(7,3.35),layout='constrained')
     markers=['o','s','^','D']
     for k,(task,points) in enumerate(curves.items()):
         caps=[c*1.07**(k-1.5) for c,_ in points]  # dodge series horizontally on the log axis
@@ -467,8 +518,10 @@ def figures(marginals,components,curves,short):
                          yerr=[x['penalized_steps']['half'] for _,x in points],**style)
     for ax,label in zip(axes,('Success rate (%)','Penalised steps $L$')):
         ax.set_xscale('log',base=2);ax.set_xticks([16,64,256,1024,2000],['16','64','256','1024','2000'])
+        ax.tick_params(axis='x',labelsize=9)
+        plt.setp(ax.get_xticklabels(),rotation=35,ha='right',rotation_mode='anchor')
         ax.minorticks_off();ax.grid(axis='y',alpha=.25);ax.set_xlabel('Simulations per decision');ax.set_ylabel(label)
-    fig.legend(*axes[0].get_legend_handles_labels(),loc='outside upper center',ncol=4,frameon=False,fontsize=7.5)
+    fig.legend(*axes[0].get_legend_handles_labels(),loc='outside upper center',ncol=2,frameon=False,fontsize=9)
     fig.savefig(FIGURES/'budget_curve.pdf',bbox_inches='tight');fig.savefig(FIGURES/'budget_curve.png',dpi=200,bbox_inches='tight');plt.close(fig)
 
 
@@ -487,6 +540,7 @@ def main():
     analyse_regression(suites['regression'],suites['baseline'],numbers,summary)
     analyse_baseline(suites['regression'],suites['random'],suites['baseline'],numbers,summary)
     analyse_supplement(suites['supplement'],numbers,summary)
+    analyse_demo_budget(numbers)
     analyse_tuning(numbers,summary)
     total=sum(map(len,suites.values()))
     numbers['TotalEpisodes']=f'{total:,}';summary['total_episodes']=total

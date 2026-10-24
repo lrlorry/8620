@@ -27,16 +27,16 @@ def main():
     text=(f"All {test_count.group(1)} unit tests pass. Local single-process runs with the\n"
           "default 9.5-second allowance (seed 0) give:\n\n"
           "\\begin{table}[H]\n\\centering\\small\n"
-          "\\begin{tabular}{@{}llrrrr@{}}\n\\toprule\n"
+          "\\renewcommand{\\arraystretch}{1.13}\n"
+          "\\begin{tabular*}{\\linewidth}{@{\\extracolsep{\\fill}}llrrrr@{}}\n\\toprule\n"
           "Task & Status & Steps & Sims/step & Mean (s) & Max (s) \\\\\n\\midrule\n"+
-          '\n'.join(rows)+"\n\\bottomrule\n\\end{tabular}\n\\end{table}\n")
+          '\n'.join(rows)+"\n\\bottomrule\n\\end{tabular*}\n\\end{table}\n")
     (REPORT/'tables/validation_summary.tex').write_text(text)
     architecture=software['architecture'].replace('_',r'\_')
     environment=(f"Episodes ran on {software['os'].replace('_',r'\_')} (\\texttt{{{architecture}}}), Python {software['python']},\n"
                  f"NumPy {software['numpy']}, SciPy {software['scipy']}, PyYAML {software['pyyaml']}.\n"
-                 "Each episode plans in one process and one thread; independent episodes ran in\n"
-                 "parallel worker processes. Because search effort is fixed by the simulation cap,\n"
-                 "machine load changes wall time but not the decisions.\n")
+                 "Wall times depend on hardware and load; a fixed simulation cap controls search\n"
+                 "effort only when the relaxed experimental deadline does not bind.\n")
     (REPORT/'tables/experiment_environment.tex').write_text(environment)
     print('Refreshed verified measurement tables.')
 

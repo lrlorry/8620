@@ -21,6 +21,18 @@ With $w=0$, these are breadth-first distances. The supplied empty-map
 distance transform uses a virtual point beyond the grid corner, so slips
 remain possible without obstacles.
 
+Grid boundaries are not obstacles: out-of-grid outcome mass is removed
+before normalisation. The simulator encodes a joint command as
+\[
+ a_{\mathrm{int}}=\sum_{i=1}^{N}a_iB^{i-1}.
+\]
+Maps are built for at most 150,000 cells. Larger grids use Chebyshev
+distance without a risk map; fixed-altitude goals on another layer
+remain unreachable. Frozen-goal disconnection checks are cached by
+drone and reached subset for at most 20,000 cells. Above that size,
+the leaf uses static reachability. These fallbacks are implementation
+limits, not guarantees of safe coordination.
+
 A rollout cut off after $L$ sampled steps returns
 \[
  \sum_{j=0}^{L-1}\gamma^j r_j/\kappa+
@@ -34,98 +46,273 @@ with zero continuation on termination. For an edge sample $v$, update
 The pooled root variance is $\hat\sigma^2=\sum_a S_a/\sum_a(n_a-1)$ over
 visited actions, or zero when the denominator is zero.
 
+\subsection{Development-set parameter selection}
+\label{app:tuning}
+Sixteen layouts cross $N=1,2,3,4$ with
+$\alpha\in\{0.25,0.5,1,2\}$ on $10\times10\times1$ or
+$10\times10\times5$ grids, with 0--5 obstacles (generator seed 4620).
+Each setting uses ten execution seeds and at most 500 simulations per
+decision; the two greedy settings use no search. These 1,920 development
+episodes are separate from all 3,300 evaluation episodes.
+
+Round 1 compares risk weights, UCT constants and search-free policies
+under most-visited root choice and widening coefficient 1.5.
+Round 2 compares the anchored rule, its threshold and rollout exploration,
+and widening coefficient 0.5. The selected setting is
+\texttt{anchor\_z1\_w0.5}: risk weight 1, UCT constant 0.35,
+switch threshold 1, widening coefficient 0.5 and rollout exploration 0.1.
+Here the suffix \texttt{w0.5} denotes widening, not the risk weight.
+
+\begin{table}[H]
+\centering\small
+\caption{Development results: 160 episodes per setting. $L$: mean
+$\pm$95\% interval half-width. $\Delta L$: paired change from the selected
+setting, with a 95\% interval over ten seed blocks; lower is better.
+Selection among twelve settings makes these exploratory comparisons
+optimistic for the development layouts.}
+\begin{tabular*}{\linewidth}{@{\extracolsep{\fill}}rlcrr@{}}
+\toprule Round & Setting & Success & $L$ & $\Delta L$ (95\% CI) \\
+\midrule
+\TuningSummaryRows
+\bottomrule
+\end{tabular*}
+\end{table}
+
 \subsection{Factorial results}
 \label{app:factorial}
-\begin{table}[H]
-\centering\footnotesize
+\begingroup
+\small
+\newcolumntype{R}[1]{>{\raggedleft\arraybackslash}p{#1}}
+\newcolumntype{C}[1]{>{\centering\arraybackslash}p{#1}}
+\setlength{\LTleft}{0pt}
+\setlength{\LTright}{\fill}
+\begin{longtable}{@{}R{.055\linewidth}R{.075\linewidth}R{.055\linewidth}
+C{.12\linewidth}R{.22\linewidth}R{.22\linewidth}R{.135\linewidth}@{}}
 \caption{All 27 S1 conditions, $n=20$ each. $L$ and Return: mean
-$\pm$95\% interval half-width; Calls: mean simulator calls per decision.}
-\begin{tabular}{@{}rrrcrrr@{}}
+$\pm$95\% interval half-width; Calls: mean simulator calls per decision.}\\
 \toprule $n_y$ & $|A|$ & $|O|$ & Success & $L$ & Return & Calls \\
 \midrule
-\FactorialRows
+\endfirsthead
+\multicolumn{7}{@{}l}{\textit{Table \thetable\ continued}}\\
+\toprule $n_y$ & $|A|$ & $|O|$ & Success & $L$ & Return & Calls \\
+\midrule
+\endhead
+\midrule
+\multicolumn{7}{r@{}}{\textit{Continued on next page}}\\
+\endfoot
 \bottomrule
-\end{tabular}
-\end{table}
+\endlastfoot
+\FactorialRows
+\end{longtable}
+\endgroup
 
 \subsection{Mechanism controls}
 \label{app:controls}
 Command masks restrict intended directions; the physical slip law retains
 all 26 neighbours. Duplicated labels leave the physical commands unchanged.
 \begin{table}[H]
-\centering\footnotesize
+\centering\small
 \caption{S2 clutter controls ($n_y=10$, $n=20$). $L$: mean $\pm$95\% interval
 half-width; Obst./Veh.: collision episodes.}
-\begin{tabular}{@{}llrcrrr@{}}
+\begin{tabular*}{\linewidth}{@{\extracolsep{\fill}}llrcrrr@{}}
 \toprule Commands & $\alpha$ & $|O|$ & Success & $L$ & Obst. & Veh. \\
 \midrule
 \ClutterControlRows
 \bottomrule
-\end{tabular}
+\end{tabular*}
 \end{table}
 \begin{table}[H]
-\centering\footnotesize
+\centering\small
 \caption{Duplicated labels ($n_y=10$, $|O|=2$, $n=20$).
 Root: admitted actions; Selected: visit share of the executed action.
 $L$: mean $\pm$95\% interval half-width.}
-\begin{tabular}{@{}lrcrrr@{}}
+\begin{tabular*}{\linewidth}{@{\extracolsep{\fill}}lrcrrr@{}}
 \toprule Labels & $|A|$ & Success & $L$ & Root & Selected (\%) \\
 \midrule
 \BranchControlRows
 \bottomrule
-\end{tabular}
+\end{tabular*}
 \end{table}
 
 \subsection{Component effects}
 \label{app:components}
 \begin{table}[H]
-\centering\footnotesize
-\caption{Paired S3 effects. Overall changes include 95\% intervals;
-factor columns give low/high-level means. $^\ast$: interaction interval
-excludes zero. Uniform proposals: ten seeds; others: twenty.}
-\resizebox{\linewidth}{!}{%
-\begin{tabular}{@{}lllccc@{}}
-\toprule Variant & $\Delta L$ & $\Delta$success (pp) & $n_y$ 5 / 20 & $|A|$ 36 / 676 & $|O|$ 0 / 5 \\
+\centering\small
+\caption{Overall paired S3 effects, with 95\% intervals.
+Uniform proposals: ten seeds; others: twenty.}
+\begin{tabular*}{\linewidth}{@{\extracolsep{\fill}}lll@{}}
+\toprule Variant & $\Delta L$ & $\Delta$success (pp) \\
 \midrule
-\ComponentRows
+\ComponentOverallRows
 \bottomrule
-\end{tabular}}
+\end{tabular*}
+\end{table}
+\begin{table}[H]
+\centering\small
+\caption{Mean paired $\Delta L$ at low/high complexity levels.
+$^\ast$: the interaction's 95\% interval excludes zero.}
+\begin{tabular*}{\linewidth}{@{\extracolsep{\fill}}lccc@{}}
+\toprule Variant & $n_y$: 5 / 20 & $|A|$: 36 / 676 & $|O|$: 0 / 5 \\
+\midrule
+\ComponentComplexityRows
+\bottomrule
+\end{tabular*}
 \end{table}
 
-\subsection{Additional validation}
+\begin{table}[H]
+\centering\small
+\setlength{\tabcolsep}{3pt}
+\caption{S3 successes at all eight factorial corners. Uniform proposals:
+$n=10$ per corner; all other rows: $n=20$. Within each $n_y$ group, columns
+give intended commands per drone / obstacle count. These counts complement
+the paired effects and interaction intervals above.}
+\begin{tabular*}{\linewidth}{@{\extracolsep{\fill}}lcccccccc@{}}
+\toprule
+& \multicolumn{4}{c}{$n_y=5$} & \multicolumn{4}{c}{$n_y=20$}\\
+\cmidrule(lr){2-5}\cmidrule(l){6-9}
+Variant & 6/0 & 6/5 & 26/0 & 26/5 & 6/0 & 6/5 & 26/0 & 26/5 \\
+\midrule
+\ComponentRawRows
+\bottomrule
+\end{tabular*}
+\end{table}
+
+\subsection{Search-budget diagnostics}
+\label{app:budget}
+Root branching and mean new-node depth measure how the search changes as
+the simulation cap grows. New-node depth is a sampled mean, not the maximum
+configured tree depth of eight. The four-drone tree remains shallow even
+at 2,000 trials, consistent with limited reuse of stochastic joint successors.
+\begin{table}[H]
+\centering\small
+\caption{S4 diagnostics, $n=20$ per row. $L$: mean $\pm$95\% interval
+half-width; Root: mean admitted actions; Depth: mean new-node depth.
+Drone counts are in parentheses.}
+\begin{tabular*}{\linewidth}{@{\extracolsep{\fill}}lrcrrr@{}}
+\toprule Task (drones) & Sims & Success & $L$ & Root & Depth \\
+\midrule
+\BudgetRows
+\bottomrule
+\end{tabular*}
+\end{table}
+
+\begin{samepage}
+\subsection{Regression coverage and paired baseline}
 \label{app:regression}
-\label{app:supplement}
+The 18 named scenarios each use 20 seeds and a cap of 2,000 simulations.
+They cover initial goal occupancy, swaps, boundaries, small or thin grids,
+unreachable goals, a short horizon, narrow passages, altitude changes,
+strong noise and multi-drone motion. The three statically infeasible cases
+and the one-step horizon are expected failures; collisions on feasible
+tasks remain recorded failures.
+\par
+\end{samepage}
+
+\begingroup
+\small
+\setlength{\LTleft}{0pt}
+\setlength{\LTright}{\fill}
+\begin{longtable}{@{}>{\raggedright\arraybackslash}p{.28\linewidth}
+>{\centering\arraybackslash}p{.09\linewidth}
+>{\centering\arraybackslash}p{.11\linewidth}
+>{\raggedleft\arraybackslash}p{.055\linewidth}
+>{\raggedleft\arraybackslash}p{.055\linewidth}
+>{\raggedleft\arraybackslash}p{.165\linewidth}
+>{\raggedleft\arraybackslash}p{.12\linewidth}@{}}
+\caption{Named regression scenarios. No search: paired base policy;
+Obst./Veh.: collision episodes. $L$: mean $\pm$95\% interval half-width,
+using each scenario's own horizon as the failure penalty. Calls/step
+counts all generative-model calls, including rollouts.}\\
+\toprule Scenario & Success & No search & Obst. & Veh. & $L$ & Calls/step \\
+\midrule
+\endfirsthead
+\multicolumn{7}{@{}l}{\textit{Table \thetable\ continued}}\\
+\toprule Scenario & Success & No search & Obst. & Veh. & $L$ & Calls/step \\
+\midrule
+\endhead
+\midrule
+\multicolumn{7}{r@{}}{\textit{Continued on next page}}\\
+\endfoot
+\bottomrule
+\endlastfoot
+\RegressionRows
+\end{longtable}
+\endgroup
+
 Among $\val{BaseMultiPairs}$ feasible multi-drone regression/generated pairs,
 search succeeds in $\val{BaseMultiFull}$ versus $\val{BaseMultiGreedy}$;
 removing search changes $L$ by $\val{BaseMultiDL}$ $\val{BaseMultiDLci}$.
-These exploratory intervals pool episode differences across layouts.
+Search rescues $\val{BaseMultiRescued}$ episodes and loses
+$\val{BaseMultiLost}$. The $\val{BaseSinglePairs}$ single-drone pairs have
+$\val{BaseSingleFull}$ successes under each policy
+($\Delta L=\val{BaseSingleDL}$ $\val{BaseSingleDLci}$).
+These exploratory intervals pool episode differences across layouts;
+they are distinct from the S1--S3 seed-block intervals and do not
+establish a search advantage.
+
+An exhaustive small-model check separately verifies 704 state-action
+pairs and 6,048 positive-probability outcomes on all 11 admissible
+nonterminal states of a free $2\times2\times1$ two-drone grid
+(\texttt{results/small\_model\_verification.json}). This checks model
+semantics on that finite example, not performance on arbitrary maps.
+
+\subsection{Supplementary end-to-end cases}
+\label{app:supplement}
 The supplementary cases below include fixed-altitude single-drone maps,
 separate altitude layers and a goal inside a teammate's corridor.
 Wall-gap and corridor cases use seven/eight obstacles, beyond the demo's
 five-obstacle range. No timeout occurred; all failures were collisions.
+The DP maximum is the largest success probability any policy can achieve
+within $H$ under the supplied model, computed by finite-horizon value iteration
+(\texttt{scripts/compute\_ceilings.py}; the two-layer crossing case is a product
+because drones on different fixed layers never interact; the four-drone case
+was not solved). This optimises success probability, whereas B1 optimises
+discounted reward. The computed maxima lie inside the solver's Wilson
+intervals, which does not establish policy equivalence.
 \begin{table}[H]
-\centering\footnotesize
-\caption{Supplementary cases ($n=20$ per policy). No search: paired base
+\centering\small
+\setlength{\tabcolsep}{3pt}
+\caption{Supplementary cases ($n=20$ per policy). 95\% CI: Wilson interval of
+the success rate; No search: paired base
 policy; Obst./Veh./T.o.: full-solver failure counts.
 $L$: mean $\pm$95\% interval half-width.}
-\begin{tabular}{@{}lcccrrrr@{}}
-\toprule Case & Success & Wilson 95\% (\%) & No search & Obst. & Veh. & T.o. & $L$ \\
+\begin{tabular*}{\linewidth}{@{\extracolsep{\fill}}lcccrrrr@{}}
+\toprule Case & Success & 95\% CI (\%) & No search & Obst. & Veh. & T.o. & $L$ \\
 \midrule
 \SupplementRows
 \bottomrule
-\end{tabular}
+\end{tabular*}
+\end{table}
+
+\begin{table}[H]
+\centering\small
+\caption{Enumerated finite-horizon success maxima (floating-point
+arithmetic) and policy validation in the supplied simulator.
+Five policies use seeds 0--1,999; the corridor adds a fixed batch of
+8,000 disjoint seeds, giving 10,000 runs in total. The initial corridor
+interval missed its DP value; the original batch is retained in
+\texttt{results/ceilings.json} and the extension in
+\texttt{results/ceiling\_validation.json}. Wilson 95\% intervals describe
+these diagnostic samples, separate from the 3,300 solver-evaluation episodes;
+they do not establish policy equivalence.}
+\begin{tabular*}{\linewidth}{@{\extracolsep{\fill}}lrrr@{}}
+\toprule Case & DP max. (\%) & Policy successes & 95\% CI (\%) \\
+\midrule
+\CeilingRows
+\bottomrule
+\end{tabular*}
 \end{table}
 
 \subsection{Generated-layout results}
 \label{app:layouts}
 \begin{table}[H]
-\centering\footnotesize
+\centering\small
 \caption{All 16 S5 layouts, one per $(N,\alpha)$ pair, ten seeds each.
 $L$: mean $\pm$95\% interval half-width; Depth: mean new-node depth.}
-\begin{tabular}{@{}llcrrr@{}}
+\begin{tabular*}{\linewidth}{@{\extracolsep{\fill}}rrcrrr@{}}
 \toprule $N$ & $\alpha$ & Success & Wilson 95\% (\%) & $L$ & Depth \\
 \midrule
 \RandomCaseRows
 \bottomrule
-\end{tabular}
+\end{tabular*}
 \end{table}

@@ -1,7 +1,20 @@
 The factorial covers two drones at $\alpha=0.25$, and S5 has only one layout
 per $(N,\alpha)$ pair. The $t$ intervals for bimodal $L$ are approximate.
-Fixed-simulation runs do not reproduce a binding demo deadline. Static
-guidance approximates detours around frozen drones. Successful wall-gap
+Fixed-simulation runs share the demo's trial cap, but omit its binding time
+limit ($\val{DemoCapped}$ of $\val{DemoDecisions}$ local demo decisions reached
+the trial cap). Slower hardware could cut simulations; S4 does not establish
+budget equivalence. Static
+guidance approximates detours around frozen drones; the leaf checks
+disconnection but uses static distances for remaining detours.
+Successful wall-gap
 runs average $\val{SuppGapSteps}$ steps for an $\val{SuppGapRoute}$-step
 static route, suggesting an optimistic cutoff estimate; these experiments
-do not isolate the cause.
+do not isolate the cause (Figure~\ref{fig:risk-maps}, bottom right).
+Finite-horizon value iteration on the supplied model gives maximum success
+probabilities of
+$\val{CeilGap}\%$ for the wall gap and $\val{CeilCorridor}\%$ for the corridor
+(Appendix~\ref{app:supplement}). Both lie inside the solver's Wilson interval
+from 13/20 successes. This demonstrates that some slip risk is unavoidable,
+but does not establish optimality or attribute every observed failure to it.
+Outcome progressive widening or an open-loop tree are possible follow-up
+designs for improving successor reuse; neither was evaluated here.

@@ -1,0 +1,33 @@
+{
+  "scenario": "supp_yield_corridor",
+  "horizon": 80,
+  "dp_maximum": 0.6308533362908261,
+  "original": {
+    "successes": 1213,
+    "episodes": 2000,
+    "seed_start": 0,
+    "seed_end": 1999
+  },
+  "additional": {
+    "successes": 5087,
+    "episodes": 8000,
+    "seed_start": 2000,
+    "seed_end": 9999
+  },
+  "combined": {
+    "mean": 0.63,
+    "lower": 0.6204889749809225,
+    "upper": 0.6394111854427017,
+    "n": 10000,
+    "successes": 6300
+  },
+  "dp_inside_wilson_95": true,
+  "source_hashes": {
+    "config": "6cdc6263a16213e2643586bbcf8625c7b726502017bc6861919bc9bae26969dd",
+    "ceilings": "85765e2e568fbe6d5f8605f952e5521cda86e7991d209b70245de4769a541bf5",
+    "compute_ceilings": "29ab751b79d40db657c3cc6f34e41436504bbe58feba1c8ac2aa5c36d4d2a177",
+    "simulator": "621faa652f57c0c33f1db42656b4ad2bdcf83519d3a7223ea9c4d14f1f96e21e",
+    "validation_script": "77866b51593caa2c0431eaa8e45f51c99284f37911e088cba608b5c49ad6b180"
+  },
+  "scope": "Fixed additional policy-validation batch, separate from MCTS solver experiments."
+}

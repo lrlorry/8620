@@ -1,15 +1,23 @@
 \input{tables/numbers.tex}
 \input{tables/factorial_rows.tex}
 \input{tables/factor_effect_rows.tex}
-\input{tables/component_rows.tex}
+\input{tables/component_overall_rows.tex}
+\input{tables/component_complexity_rows.tex}
 \input{tables/clutter_control_rows.tex}
 \input{tables/branch_control_rows.tex}
 \input{tables/random_case_rows.tex}
 \input{tables/supplement_rows.tex}
+\input{tables/ceiling_rows.tex}
+\input{tables/component_raw_rows.tex}
+\input{tables/budget_rows.tex}
+\input{tables/regression_rows.tex}
+\input{tables/tuning_summary_rows.tex}
 \section*{Part B: Multi-drone planning under uncertainty (35 points)}
 \begingroup
 \setlength{\parindent}{0pt}
 \setlength{\parskip}{4pt}
+\clubpenalty=10000
+\widowpenalty=10000
 
 \subsection*{Question 1: MDP formulation (3 points)}
 Let $\mathcal G=\{0,\ldots,n_x-1\}\times\{0,\ldots,n_y-1\}
@@ -83,6 +91,25 @@ commands within $1.05$ of the minimum, with weights $e^{-3(\mathrm{score}-\min)}
 \textsc{Explore} samples uniformly from free, in-grid, unreserved targets
 when available.
 
+Figure~\ref{fig:risk-maps} separates distance, slip risk and risk-weighted
+cost. In the cluttered map, risk-aware guidance routes away from
+high-risk cells. At the wall gap, the saved run repeatedly approaches
+the passage before crossing. These examples explain the guidance and
+illustrate a limitation; they do not establish a performance improvement.
+
+\begin{figure}[!htbp]
+\centering
+\includegraphics[width=\linewidth]{figures/risk_maps.pdf}
+\caption{Guidance maps for two fixed-altitude single-drone cases.
+Left: shortest-step distance $\delta(p)$ and the risk-free greedy route.
+Middle: one-step obstacle-slip probability $\rho(p)$ for a free target
+command. Right: risk-weighted cost $J(p)$ with the risk-aware greedy
+route (top) or a saved seed-0 execution (bottom).
+Dark cells: obstacles; circle: start; star: goal. Greedy routes assume
+no slips; colour scales differ between panels.}
+\label{fig:risk-maps}
+\end{figure}
+
 \textbf{The four MCTS components.}
 \begin{enumerate}[label=(\arabic*),itemsep=2pt]
 \item \textbf{Selection.} Try unvisited admitted actions first; otherwise maximise
@@ -97,6 +124,7 @@ Here $U_i^{\mathrm{adm}}$ contains commands towards free, in-grid neighbours.
 Admit \textsc{Greedy} first, then \textsc{Explore} with probability $0.15$
 and \textsc{Sample} otherwise (at most 12 attempts for a new action).
 Each distinct sampled successor has its own child.
+\begin{samepage}
 \item \textbf{Simulation.} Roll out for at most eight steps, choosing
 \textsc{Explore} with probability $0.1$, otherwise \textsc{Greedy}.
 Terminal outcomes have zero continuation value; other cutoffs add
@@ -109,6 +137,8 @@ $\delta_i$ is the physical breadth-first distance, set to $\infty$ when
 unreachable or when frozen goal occupants disconnect the route.
 The latter connectivity check is cached on maps of at most 20,000 cells.
 Tree depth is capped at eight.
+\par
+\end{samepage}
 \item \textbf{Backpropagation.} Back up $v=R_{\mathrm{sample}}/\kappa+\gamma v'$;
 increment edge and node visits and update the edge mean and sample variance
 using Welford's recurrence.
@@ -124,10 +154,10 @@ Execute the action with largest positive $m(a)$; otherwise keep $a_g$.
 With no completed trial, use $a_g$ directly.
 This variance-aware switching heuristic has no formal policy-improvement
 guarantee. Parameters were selected on 16 separate development layouts;
-the tuning results are archived in \texttt{results/dev/}.
+the selection protocol and results appear in Appendix~\ref{app:tuning}.
 
 \noindent\begin{minipage}{\linewidth}
-\begin{lstlisting}[style=pseudocode,basicstyle=\ttfamily\footnotesize,caption={Online UCT; rollout and admission rules are defined above.}]
+\begin{lstlisting}[style=pseudocode,basicstyle=\ttfamily\small,caption={Online UCT; rollout and admission rules are defined above.}]
 PROCEDURE PLAN(s, budget, K = 2000)
     deadline <- NOW + max(0, 0.97 * min(budget, 10) - 0.002)
     a_g <- GREEDY(s); root <- empty node; h <- H - t; sims <- 0
@@ -159,7 +189,10 @@ not enforce the execution step limit.
 \subsection*{Question 3: Implementation and demonstration (8 points)}
 \texttt{run\_u8076655.py} implements B2 using the supplied MultiDroneUnc
 simulator's unchanged dynamics, with independent planning and
-execution RNGs. From the extracted archive's top-level folder:
+execution RNGs. The planner uses \texttt{get\_config()},
+\texttt{simulate()} and \texttt{num\_actions}. AST checks compare the
+core simulator methods against supplied revision \texttt{ea3cbfe}
+(\texttt{UPSTREAM.json}). From the extracted archive's top-level folder:
 
 \textbf{Reproduction commands.}
 \begin{lstlisting}[style=terminal,keepspaces=true]
@@ -202,20 +235,28 @@ Planning is serial, with a 9.5\,s allowance and 2,000-trial cap; the
 deadline is checked before each simulator call.
 \input{tables/validation_summary.tex}
 
-\clearpage
 \subsection*{Question 4: Experimental investigation (20 points)}
 \subsubsection*{Experimental design}
 The main evaluation uses 2,000 simulations per decision; S3 includes
 ablations and a zero-search policy, and S4 varies the simulation cap.
-Experimental runs use a relaxed wall-clock cap to isolate search effort.
-The demo instead stops at the first of its time and trial limits, so these
-are different budget protocols. Conditions share execution seeds 0--19
+Experimental runs use a relaxed wall-clock cap to isolate search effort;
+the demo stops at the first of its time and trial limits. In the four
+local single-process B3 runs the
+2,000-trial cap ended $\val{DemoCapped}$ of $\val{DemoDecisions}$ decisions,
+and the one clock-bound decision still completed $\val{DemoMinSims}$
+simulations (largest decision $\val{DemoMaxPlan}$\,s). Slower hardware could
+end decisions on the clock with fewer simulations; S4 finds no consistent
+completion improvement from 16 to 2,000 simulations on four tasks.
+Its intervals do not establish
+equivalence or robustness to a binding deadline on other hardware.
+Wall times logged during the parallel experiments reflect CPU sharing between
+worker processes, not demo decision times. Conditions share execution seeds 0--19
 unless noted, with comparisons paired within each scenario.
 Development layouts were excluded from evaluation. Only independent
 experimental episodes ran in parallel; planning within each episode was serial.
 
 \begin{table}[H]
-\centering\footnotesize
+\centering\small
 \begin{tabularx}{\linewidth}{@{}>{\raggedright\arraybackslash}p{1.25cm}
 >{\raggedright\arraybackslash}X>{\raggedright\arraybackslash}p{4.7cm}@{}}
 \toprule Set & Controlled scenarios & Question and expectation \\
@@ -262,15 +303,33 @@ component effects pair each ablation with the full solver before averaging
 corners. Their 95\% intervals use seed blocks. Supporting means and
 intervals are in Appendix~\ref{app:details}.
 
+\begin{samepage}
+\textbf{Execution environment.}
+\input{tables/experiment_environment.tex}
+\par
+\end{samepage}
+
+\begin{samepage}
 \subsubsection*{S1: effects of the three complexity factors}
+\begin{figure}[H]
+\centering
+\includegraphics[width=\linewidth]{figures/complexity_effects.pdf}
+\caption{S1 marginal means for success and penalised completion length
+$L$, averaging the other factors within each seed. Bars show 95\%
+intervals over 20 seed blocks. Action-space sizes count joint commands.}
+\label{fig:complexity-effects}
+\end{figure}
+\end{samepage}
+
 \begin{table}[H]
-\centering\small
-\begin{tabular}{@{}lll@{}}
+\centering\normalsize
+\renewcommand{\arraystretch}{1.13}
+\begin{tabular*}{\linewidth}{@{\extracolsep{\fill}}lll@{}}
 \toprule Factor (high minus low) & $\Delta L$ (95\% CI) & $\Delta$success (pp; 95\% CI) \\
 \midrule
 \FactorEffectRows
 \bottomrule
-\end{tabular}
+\end{tabular*}
 \caption{Paired factor effects; positive $\Delta L$ indicates degradation.}
 \end{table}
 
@@ -308,9 +367,9 @@ authority in S1. Detailed controls, including the visit share of the
 \input{partB_components.tex}
 
 \subsubsection*{S4: search budget}
-\begin{figure}[H]
+\begin{figure}[!htbp]
 \centering
-\includegraphics[width=0.95\linewidth]{figures/budget_curve.pdf}
+\includegraphics[width=\linewidth]{figures/budget_curve.pdf}
 \caption{Success and $L$ versus simulations per decision; 20 runs per point,
 with Wilson and $t$ 95\% intervals. Drone counts are in parentheses.}
 \end{figure}
@@ -321,6 +380,8 @@ while mean new-node depth increases from $\val{BudgetDemoFour3D16Depth}$ to
 $\val{BudgetDemoFour3D2000Depth}$.
 More search changes the tree without a demonstrated completion benefit
 here; overlapping intervals do not establish budget equivalence.
+Appendix~\ref{app:budget} also reports admitted root actions and
+new-node depth, distinguishing tree growth from task performance.
 
 \input{partB_random.tex}
 \subsubsection*{Limitations}

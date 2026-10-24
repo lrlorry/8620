@@ -898,3 +898,292 @@ Tool: OpenAI Codex
 Purpose: Explain the choice of 2D or 3D views based on allowed altitude changes and distinct height layers.
 Prompt (verbatim):
 为啥 有的是三维 有的 二维
+
+
+Tool: OpenAI Codex
+Purpose: Explain Part B gradually using the report and code, starting from the planning loop, state, actions and stochastic motion.
+Prompt (verbatim):
+要不开始一点点讲解吧这个partB. 结合代码和报告 作为顶尖大学教授 智能机器人领军人 深入浅出 高屋建瓴的讲解 让我弄明白
+
+
+Tool: OpenAI Codex
+Purpose: Improve scientific typography and page balance: enlarge tables and figure labels, reflow long tables, split overly wide tables, and remove unnecessary forced page breaks without changing algorithms or experimental values.
+Prompt (verbatim):
+报告排版能不能处理下 有的大段的空白却字很小 能不能排版有科学审美
+
+
+Tool: OpenAI Codex
+Purpose: Check report history and explain the earlier removal of guidance heatmaps, their retained source files and their value for explaining the algorithm.
+Prompt (verbatim):
+你是不是删了一些东西 我记得原来有热力图的 你是觉得不需要吗
+
+
+Tool: OpenAI Codex
+Purpose: Restore useful explanatory figures and supporting evidence, including guidance heatmaps, factorial marginal means, model conventions, execution environment, development selection, per-corner ablations, budget diagnostics and regression coverage; retain readable typography without rerunning experiments.
+Prompt (verbatim):
+你把值得恢复的都加进去
+
+Tool: Anthropic Claude Code (Claude Opus 5.5)
+Purpose: Commit and push the pending A2 changes.
+Prompt (verbatim):
+push
+
+Tool: Anthropic Claude Code (Claude Opus 5.5)
+Purpose: Ask whether three weak cases (pasted from a ChatGPT summary) can be improved within the course methods.
+Prompt (verbatim, including the pasted text):
+GPT说 
+
+- 单机墙壁仅有一个缺口：13/20 成功。
+- 双无人机目标位于共享走廊：13/20 成功。
+- 四无人机、强噪声的部分生成场景：成功率明显降低。 这三种 有没有办法成功率高一点 并且符合课件要求
+
+Tool: Anthropic Claude Code (Claude Opus 5.5)
+Purpose: Ask for an assessment of a ChatGPT grading-style review of the report (pasted below as part of the prompt).
+Prompt (verbatim, including the pasted review):
+这是 gpt的评价 你看看有必要改的地方吗 
+
+我按照 ANU COMP8620 研究生课程的严格评分标准，重新审阅了你 GitHub 最新版本的完整 A2 报告，包括 Part A 的数学证明、Part B 的算法设计、实验分析以及原题评分要求。
+
+我的判断是：
+
+完整书面报告预估成绩
+
+# 54 / 57
+
+最可能的估计
+
+合理区间：52–56 / 57，约 91%–98%。这是基于报告内容的预测，不是实际评分。
+
+如果我是阅卷教授，我会认为这是一份具备 High Distinction 水平的作业。 但我不会轻易给出满分，因为 B4 还有两个值得严格审视的实验设计问题。
+
+## 一、逐题评分
+
+| 题目                        | 满分 | 我的估分  | 评价         |
+| ------------------------- | -- | ----- | ---------- |
+| Part A Q1：MDP Abstraction | 10 | 9–10  | 证明严格，反例有效  |
+| Part A Q2：Alpha-vector    | 10 | 10    | 推导完整，结论正确  |
+| Part A Q3：MDP vs POMDP    | 10 | 9–10  | 场景合理，论证清楚  |
+| Part A 小计                 | 30 | 28–30 | 很强         |
+| B1：MDP Formulation        | 3  | 3     | 数学定义完整     |
+| B2：Online Solver          | 4  | 3.5–4 | 算法和伪代码具体   |
+| B4：Experimental Study     | 20 | 17–19 | 研究设计好，但有局限 |
+| 书面报告总计                    | 57 | 约 54  | 高分水平       |
+
+注意：B3 的 8 分来自现场 Demo，不是单靠报告评分；另外还有 35 分口试。因此完整 Assignment 2 总分是 100 分，目前还不能预测最终的百分制成绩。
+
+## 二、Part A：我认为基本接近满分
+
+这部分我最看重的是数学正确性，而不是论证长度。
+
+Q1（10 分）：你使用了状态抽象的转移一致性条件：
+
+\\[ \phi(s_1)=\phi(s_2) \Rightarrow P(R\mid s_1,a)=P(R\mid s_2,a) \\]
+
+然后构造出同属 \\(L\\) 的两个状态，证明它们转移至 \\(R\\) 的概率分别为 0 和 0.7。
+
+这是直接否定精确状态抽象的有效反例。论证简洁且抓住本质。
+
+Q2（10 分）：你正确推导了五条 Alpha-vector 直线，并得到上包络分界点：
+
+\\[ p=\frac25,\qquad p=\frac35 \\]
+
+最终保留 \\(\alpha_1,\alpha_2,\alpha_3\\)，去除 \\(\alpha_4,\alpha_5\\)。证明不仅给出了结果，还解释了为什么被移除的向量在任何 Belief 下都不是最优。
+
+这道题我倾向于给满分。
+
+Q3（10 分）：你清楚地区分了可观测且满足 Markov Property 的行人运动，与存在持续性隐藏目的地的行人运动。
+
+尤其是使用 Belief \\(b_t(\mathbf g)\\) 来解释为什么相同观测位置可能对应不同未来运动分布。这比只说“MDP 全可观测、POMDP 部分可观测”深入得多。
+
+## 三、Part B：真正优秀的地方在哪里？
+
+### 1. B1 和 B2：技术完整性很高
+
+你的 B1 没有简单写一个五元组就结束，而是认真处理了：
+
+- 联合状态与联合动作。
+- 无人机抵达目标后的冻结状态。
+- 多无人机独立随机移动与全局碰撞判定。
+- 有限时域和吸收状态。
+- 随机奖励与期望累计回报。
+
+B2 则不只是写“MCTS 分为四个阶段”，而是明确实现了 UCT Selection、Progressive Widening、Guided Rollout、Monte Carlo Backpropagation 和 Anchored Root Decision。
+
+从回答题目要求的角度，B1、B2 都非常接近满分标准。
+
+### 2. B4：整份作业最有研究价值的部分
+
+这一部分是我给出高分估计的主要理由。
+
+你的报告不是随便设计几个场景，然后画一张成功率曲线。
+
+你完成了 3,300 次正式实验，包括三因素全因子实验、噪声及动作控制实验、组件消融、搜索预算敏感性、随机场景和额外回归测试。
+
+更重要的是，你不仅计算了均值和 95% Confidence Interval，还尝试处理实验中的混杂因素。
+
+例如，你发现增加动作方向后完成步数减少，但没有直接得出“动作空间越大越容易求解”这样的结论，而是通过复制动作标签的控制实验，区分动作分支数量与实际控制能力。
+
+这体现了研究方法意识。
+
+我还特别欣赏你的报告没有回避一个负面发现：
+
+\\[ \text{Full MCTS} \not\gg \text{Guided-only} \\]
+
+在现有实验中，完整 MCTS 尚未表现出稳定且统计上明确的整体优势。
+
+敢于报告与最初算法预期不一致的结果，是研究严谨性的表现。
+
+## 四、为什么我不直接给你 57/57？
+
+主要有两个原因。
+
+### 问题一：B4 的实验预算与 B3 不完全一致
+
+这是最大的实际扣分风险。
+
+B3 的在线规划要求单步最多 10 秒。
+
+而 B4 主实验采用固定 2,000 次 Simulation，并放宽时间截止，部分复杂场景超过 10 秒。
+
+这样做可以合理地控制搜索工作量。你的报告也明确解释了这种差异。
+
+但严格的阅卷教授可能追问：
+
+> 你分析的算法性能，是不是提交的那个受 10 秒限制的 Online Solver 的真实性能？
+
+这是一个有分量的问题。
+
+因为固定模拟次数下的表现，不一定与时间受限时完全相同。
+
+如果老师特别强调 B3、B4 必须基于相同的实际规划预算，我认为这里可能影响 B4 的 1–2 分。
+
+### 问题二：State-space Complexity 的实验不够全面
+
+你的 S1 通过扩大网格的 \\(n_y\\) 来增加状态空间规模。
+
+实验结果显示状态空间增大对性能影响不明显。
+
+但你也承认，扩大的是许多不在主要路线上的区域。
+
+因此，这项实验更准确地回答的是：
+
+> 增加与主要规划路径关系不大的状态，对求解性能有多大影响？
+
+而不是充分回答：
+
+> 当实际决策相关状态空间变大时，算法性能如何退化？
+
+你的 S5 增加无人机数量，确实提供了额外证据，但同时改变了状态空间、动作空间和多无人机协调难度。
+
+所以对 State-space Complexity 的因果隔离还可以更强。
+
+这也是我不会毫无保留给 B4 20/20 的原因。
+
+## 五、B3：算法现场可能拿多少？
+
+这部分需要单独讨论。
+
+目前你的代码记录了四组默认时间预算下的成功 Demo，其中包括：
+
+- 单无人机二维开放环境。
+- 老师提供的双无人机示例。
+- 强扰动单无人机环境。
+- 四无人机三维、五障碍物环境。
+
+已记录的最大单步规划时间都低于 10 秒。
+
+因此，如果老师现场提供的场景符合这些验证的难度范围、程序在实验室电脑上正常运行，我认为 B3 有希望拿 6–8/8，甚至满分。
+
+但我不会保证。它毕竟是随机规划器，隐藏环境与运行硬件也没有完全验证。
+
+如果按中间估计计算：
+
+Part A + Part B 预估（不含35分口试）
+
+书面报告
+
+# 54/57
+
+现场 Demo
+
+# 7/8
+
+合计估计
+
+# 61/65
+
+其中 Demo 的 7 分是预测值，并非已取得的分数；35 分口试尚未估计。
+
+## 六、还有一项必须检查：Generative AI Disclosure
+
+你的报告已经披露了 Codex 和 Claude Code 的使用，源码包中也保存了相关提示词。
+
+但我核查了目前的 `AI_prompts.txt`：它主要记录了 Codex 和 Claude Code 的直接交互，尚未看到独立 ChatGPT 讨论的完整提示词记录。
+
+如果这些 ChatGPT 讨论实际影响了报告或代码，应当按照课程要求补全披露。
+
+这不是普通的“扣一两分”问题，而是题目明确规定的学术诚信要求。建议在提交前核实。
+
+## 七、我的最终学术评价
+
+我会从三个维度评价这份作业：
+
+| 评价维度    | 判断                     |
+| ------- | ---------------------- |
+| 数学正确性   | 很强，Part A 几乎没有明显的实质性错误 |
+| 算法实现与理解 | 强，能够把课堂在线 MDP 求解框架具体落实 |
+| 实验研究方法  | 较强，明显超过只做几个 Demo 的基本要求 |
+
+但我会明确区分两件事：
+
+作为一份课程作业，它已经相当优秀。
+
+作为一项希望发表的机器人规划研究，它仍然不够。
+
+真正的研究论文还需要更强的算法创新性、更充分的基线比较，以及对性能改善和理论边界的更严格证明。
+
+不过老师并没有要求你达到正式论文发表标准。Part B 的目标是进行一次简化的研究实践，从这个角度衡量，你的工作已经充分覆盖主要要求。
+
+### 最后给一个明确判断
+
+我预估你这份书面报告最可能拿到 54/57 左右，合理区间 52–56 分。
+
+如果 B3 现场表现良好，那么 Part A + Part B 有希望达到 60–63/65 的水平。
+
+在我看来，现在最大的风险已经不是报告写得不够深，而是实验预算的一致性、最终提交合规性，以及你能否在现场清楚解释每个算法设计的意义。
+
+尤其是口试，真正值得准备的不是再背一遍 MCTS 四阶段，而是回答：
+
+“为什么风险感知 Greedy 已经表现很好，而 MCTS 在更多模拟次数下却不一定带来更好的表现？”
+
+能独立、严谨地解释这个问题，才真正说明你掌握了这份作业背后的机器人决策理论。
+
+Tool: Anthropic Claude Code (Claude Opus 5.5)
+Purpose: Implement items 2 and 4 of the assessment: document B3/B4 budget consistency with measured evidence, and add exact value-iteration success ceilings (validated in the simulator) for the supplementary cases.
+Prompt (verbatim):
+你完成下 2 4 条吧
+
+
+Tool: OpenAI Codex
+Purpose: Explain why transition probabilities sum over raw outcomes mapping to the same final state.
+Prompt (verbatim):
+Transition 公式 为什么有个求和
+
+
+Tool: OpenAI Codex
+Purpose: Explain the supplied generative model using the course notes and simulator interfaces.
+Prompt (verbatim):
+COMP8620_PartB 讲义里面 这就是为什么MCTS特别适合老师提供的MultiDroneUnc：它直接提供了一个能够采样随机后继的Generative
+Model（生成式模型） 老师提供的这个模型是干嘛的 讲讲呢
+
+
+Tool: OpenAI Codex
+Purpose: Distinguish log replay from action-conditioned simulation, using an official Waymax example.
+Prompt (verbatim):
+生产中 这种是不是基本上是回放？
+
+
+Tool: OpenAI Codex
+Purpose: Audit the updated report and diagnostic DP, correct unsupported conclusions and initial-goal edge cases, validate the final submission and push the repository.
+Prompt (verbatim):
+codex重新修改了些内容 重新推送到github并审核一下

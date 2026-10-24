@@ -1,9 +1,10 @@
-All 35 unit tests pass. Local single-process runs with the
+All 39 unit tests pass. Local single-process runs with the
 default 9.5-second allowance (seed 0) give:
 
 \begin{table}[H]
 \centering\small
-\begin{tabular}{@{}llrrrr@{}}
+\renewcommand{\arraystretch}{1.13}
+\begin{tabular*}{\linewidth}{@{\extracolsep{\fill}}llrrrr@{}}
 \toprule
 Task & Status & Steps & Sims/step & Mean (s) & Max (s) \\
 \midrule
@@ -12,5 +13,5 @@ Supplied example, 2 drones & success & 17 & 2,000 & 5.43 & 7.39 \\
 Strong wind, 1 drone, $\alpha=3$ & success & 18 & 2,000 & 4.69 & 6.29 \\
 Four 3D, 5 obstacles & success & 13 & 1,983 & 6.34 & 9.21 \\
 \bottomrule
-\end{tabular}
+\end{tabular*}
 \end{table}

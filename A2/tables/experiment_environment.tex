@@ -1,5 +1,4 @@
 Episodes ran on macOS-26.6.2 (\texttt{x86\_64}), Python 3.12.9,
 NumPy 1.26.4, SciPy 1.15.1, PyYAML 6.0.2.
-Each episode plans in one process and one thread; independent episodes ran in
-parallel worker processes. Because search effort is fixed by the simulation cap,
-machine load changes wall time but not the decisions.
+Wall times depend on hardware and load; a fixed simulation cap controls search
+effort only when the relaxed experimental deadline does not bind.

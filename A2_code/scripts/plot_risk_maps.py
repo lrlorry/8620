@@ -3,8 +3,8 @@
 Panels: breadth-first steps delta(p), departure risk rho(p) (probability that the next
 move slips into an obstacle) and the risk-weighted cost-to-go J(p). Routes are the
 planner's greedy proposals without slips; the last panel overlays an executed episode.
-All values come from planner.py itself; nothing is re-simulated except that episode's
-stored trace.
+Map values come from planner.py; the executed path is read from a saved trace.
+No stochastic episode is re-run.
 """
 
 import json
@@ -54,7 +54,7 @@ def panel(ax,grid,cmap,label,start,goal,route=None,style='-'):
     colours=plt.get_cmap(cmap).copy();colours.set_bad(OBSTACLE)
     image=ax.imshow(grid,origin='lower',cmap=colours,vmin=0,vmax=np.nanpercentile(grid,98) or 1)
     bar=plt.colorbar(image,ax=ax,fraction=.046,pad=.03)
-    bar.ax.tick_params(labelsize=6.5,colors=MUTED);bar.set_label(label,fontsize=7,color=INK)
+    bar.ax.tick_params(labelsize=9,colors=MUTED);bar.set_label(label,fontsize=9,color=INK)
     if route is not None:
         xs,ys=[p[0] for p in route],[p[1] for p in route]
         halo=[patheffects.withStroke(linewidth=3.2,foreground='white')]
@@ -67,9 +67,9 @@ def panel(ax,grid,cmap,label,start,goal,route=None,style='-'):
 def main():
     cases=[('supp_single_clutter_2d','Five obstacles, $\\alpha=1$'),
            ('supp_single_wallgap_2d','Wall with one gap, $\\alpha=0.5$')]
-    plt.rcParams.update({'font.family':'serif','mathtext.fontset':'cm','font.size':8,'text.color':INK,
+    plt.rcParams.update({'font.family':'serif','mathtext.fontset':'cm','font.size':10,'text.color':INK,
                          'axes.edgecolor':MUTED,'pdf.fonttype':42})
-    fig,axes=plt.subplots(2,3,figsize=(7,4.4),layout='constrained')
+    fig,axes=plt.subplots(2,3,figsize=(7,4.8),layout='constrained')
     for row,(name,title) in enumerate(cases):
         env=make_env(ROOT/f'environments/{name}.yaml',0);state=env.reset()
         risky,plain=MCTSPlanner(env),MCTSPlanner(env,risk_weight=0.)
@@ -85,10 +85,10 @@ def main():
             trace=json.loads((ROOT/f'results/trajectories/supplement_{name}_full_2000.json').read_text())
             route=[tuple(step['state'][0][:3]) for step in trace['trajectory']]+[tuple(trace['final_state'][0][:3])]
         panel(axes[row,2],layer(risky.costs[0],blocked),'Blues','cost (steps)',start,goal,route)
-        axes[row,0].set_ylabel(title,fontsize=8.5)
+        axes[row,0].set_ylabel(title,fontsize=10)
     for row,last in enumerate(['$J(p)$, risk-aware route','$J(p)$, executed run']):
         for col,heading in enumerate(['$\\delta(p)$, risk-free route','$\\rho(p)$',last]):
-            axes[row,col].set_title(heading,fontsize=8.5)
+            axes[row,col].set_title(heading,fontsize=10)
     (REPORT/'figures').mkdir(parents=True,exist_ok=True)
     fig.savefig(REPORT/'figures/risk_maps.pdf',bbox_inches='tight')
     fig.savefig(REPORT/'figures/risk_maps.png',dpi=200,bbox_inches='tight')

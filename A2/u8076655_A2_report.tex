@@ -13,6 +13,7 @@
 \usepackage{booktabs}
 \usepackage{tabularx}
 \usepackage{array}
+\usepackage{longtable}
 \usepackage{graphicx}
 \usepackage{float}
 \usepackage{caption}
@@ -434,7 +435,12 @@ destinations to select driving actions.
 % =============================================================================
 \input{partB.tex}
 
-\clearpage
+\par\bigskip
+\begingroup
+\setlength{\parindent}{0pt}
+\setlength{\parskip}{4pt}
+\setlength{\tabcolsep}{4.5pt}
+\renewcommand{\arraystretch}{1.13}
 \appendix
 \section{Supporting definitions and results}
 \label{app:details}
@@ -447,5 +453,6 @@ Baseline and supplementary runs use the current planner directly.
 
 \clearpage
 \input{partB_visualisations.tex}
+\endgroup
 
 \end{document}

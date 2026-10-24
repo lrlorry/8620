@@ -8,3 +8,12 @@ spaces. Mean new-node depth is $\val{DepthN1}$ for one drone and
 $\val{DepthN4}$ for four, consistent with less successor reuse when joint
 outcomes multiply. Each $(N,\alpha)$ pair has only one layout, so the
 per-layout results in Appendix~\ref{app:layouts} do not isolate layout effects.
+For the four-drone layout at $\alpha=2$, joint value iteration was not attempted
+($140^4\approx4\times10^8$ joint positions per step). Each drone alone could
+achieve at least $\val{CeilFourSingle}\%$ success when other drones are removed.
+Executing those policies together gives $\val{CeilFourUncoord}\%$ success
+(1,000 diagnostic runs; Wilson 95\% interval $\val{CeilFourUncoordCI}$),
+compared with $\val{RandNFourHigh}$ for the solver. The different sample sizes
+and unpaired comparison do not establish a solver advantage or isolate the
+cause of failure. They motivate further coordination tests
+(\texttt{results/ceilings.json}).

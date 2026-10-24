@@ -145,14 +145,18 @@ python scripts/analyse_results.py
 python scripts/release_validation.py      # single process: tests, demos, 10 s check
 python scripts/verify_equivalence.py --workers 12   # replay reported seed-0 episodes
 python scripts/probe_risk_leaf.py --workers 12      # exploratory risk-charged leaf probe
-python scripts/plot_risk_maps.py                    # archived guidance heatmaps
+python scripts/plot_risk_maps.py                    # B2 guidance heatmaps; no new episodes
 python scripts/plot_scenario_gallery.py             # saved paths, timings and report appendix
+python scripts/compute_ceilings.py                  # exact success ceilings (value iteration)
+python scripts/verify_ceilings.py                   # extra corridor policy validation, 8,000 fixed seeds
 ```
+
+Success-ceiling diagnostics optimise the probability of completing all goals, whereas the submitted planner optimises discounted reward. They are numerical finite-horizon dynamic programs, not evidence that the submitted policy is optimal. The original policy-validation batches remain in `results/ceilings.json`; `results/ceiling_validation.json` records an additional fixed corridor batch (seeds 2,000–9,999), its Wilson interval and source/configuration hashes. The initial 2,000-run corridor interval missed the DP value; the extension is a diagnostic check, separate from the 3,300 solver-evaluation episodes. The four-drone independent-policy comparison uses different sample sizes and does not establish a coordination benefit. Tests in `tests/test_ceilings.py` independently enumerate outcomes through the supplied simulator, covering boundaries, obstacles, shared cells and initially reached drones.
 
 The scenario gallery reads stored seed-0 full-solver traces without running
 the planner. It covers all 76 non-development manifest entries plus the
 supplied example. Individual PNGs and a source/hash index are written to
-`results/visualisations/`; the complete PDF and three sheets of twelve
+`results/visualisations/`; the complete PDF and four sheets of twelve
 representative cases are written to the report directory. Default-budget
 demo timings are labelled separately from fixed-simulation experiments
 with relaxed deadlines. Crosses mark unfinished drones' returned terminal

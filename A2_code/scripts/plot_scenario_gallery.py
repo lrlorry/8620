@@ -1,7 +1,7 @@
 """Plot saved full-solver traces; do not run the planner or change experiment data.
 
 The complete gallery covers every non-development manifest entry and the
-supplied example. Twelve cases form three compact report sheets. Default-budget
+supplied example. Twelve cases form four readable report sheets. Default-budget
 demo timings and relaxed-deadline experimental timings are labelled separately.
 """
 
@@ -57,12 +57,13 @@ TITLES = {
 }
 SHEETS = [
     ('Default-budget demonstrations', [
-        'demo_open_2d', 'example_config', 'strong_wind', 'demo_four_3d']),
-    ('Geometry and motion uncertainty', [
-        'altitude_detour', 'narrow_passage', 'supp_single_clutter_2d',
-        'supp_single_wallgap_2d']),
-    ('Goal occupancy, altitude layers and a failure', [
-        'one_reached', 'supp_layers_cross_2d', 'supp_yield_corridor', 'three_3d']),
+        'demo_open_2d', 'example_config', 'strong_wind']),
+    ('3D flight and constrained routes', [
+        'demo_four_3d', 'altitude_detour', 'narrow_passage']),
+    ('Clutter, bottlenecks and goal occupancy', [
+        'supp_single_clutter_2d', 'supp_single_wallgap_2d', 'one_reached']),
+    ('Altitude layers, coordination and a failure', [
+        'supp_layers_cross_2d', 'supp_yield_corridor', 'three_3d']),
 ]
 
 
@@ -117,7 +118,7 @@ def spatial_axis(fig, slot, case):
 def path_plot(ax, is_3d, case, compact=False):
     cfg, data, states = case['cfg'], case['data'], case['states']
     dims = cfg['grid_size']
-    size = 7 if compact else 10
+    size = 10
     goals = np.asarray(cfg['goal_positions'])
     positions = states[:, :, :3]
     obstacles = cfg.get('obstacle_cells') or []
@@ -134,8 +135,8 @@ def path_plot(ax, is_3d, case, compact=False):
     for i in range(positions.shape[1]):
         p, colour = positions[:, i], COLOURS[i % len(COLOURS)]
         coords = (p[:, 0], p[:, 1], p[:, 2]) if is_3d else (p[:, 0], p[:, 1])
-        ax.plot(*coords, color=colour, lw=1.25 if compact else 1.8,
-                marker='.', markersize=2 if compact else 3, zorder=3)
+        ax.plot(*coords, color=colour, lw=1.6 if compact else 1.8,
+                marker='.', markersize=2.6 if compact else 3, zorder=3)
         start = p[0] if is_3d else p[0, :2]
         goal = goals[i] if is_3d else goals[i, :2]
         ax.scatter(*start, color=colour, marker='s', s=16 if compact else 36,
@@ -153,7 +154,7 @@ def path_plot(ax, is_3d, case, compact=False):
     if is_3d:
         ax.set_zlim(-.6, dims[2]-.4)
         ax.set_zlabel('z', fontsize=size, labelpad=0)
-        ax.set_box_aspect([max(v, 2) for v in dims])
+        ax.set_box_aspect([max(v, 2) for v in dims], zoom=1.16 if compact else 1)
         ax.view_init(elev=27, azim=-64)
         ax.zaxis.set_major_locator(MaxNLocator(3, integer=True))
     else:
@@ -164,17 +165,21 @@ def path_plot(ax, is_3d, case, compact=False):
     ax.tick_params(labelsize=size-1, pad=1)
     title = TITLES.get(case['entry']['name'], case['entry']['name'].replace('_', ' '))
     outcome = data['termination'].replace('infeasible_', 'reject: ').replace('_', ' ')
-    info = (f"N={len(goals)}, grid={'x'.join(map(str,dims))}, "
+    info = (f"N={len(goals)}, |O|={len(set(map(tuple,obstacles)))}, "
+            f"alpha={cfg['alpha']:g}" if compact else
+            f"N={len(goals)}, grid={'x'.join(map(str,dims))}, "
             f"|O|={len(set(map(tuple,obstacles)))}, alpha={cfg['alpha']:g}")
     if not is_3d:
         info += f', z={layer}'
-    ax.set_title(f"{title} | {outcome}, {data['steps']} steps\n{info}",
+    heading = (f"{title} | {outcome}\n{info}; {data['steps']} steps" if compact else
+               f"{title} | {outcome}, {data['steps']} steps\n{info}")
+    ax.set_title(heading,
                  fontsize=size+.3, loc='left', pad=5)
 
 
 def time_plot(ax, case, compact=False):
     data, elapsed = case['data'], case['elapsed']
-    size = 7 if compact else 10
+    size = 10
     if len(elapsed):
         ax.bar(np.arange(1, len(elapsed)+1), elapsed, color=COLOURS[0], width=.7)
         ax.set_xlim(.2, len(elapsed)+.8)
@@ -190,9 +195,15 @@ def time_plot(ax, case, compact=False):
         ax.text(.5, .5, 'No planning steps\n'+data['termination'].replace('_', ' '),
                 transform=ax.transAxes, ha='center', va='center', fontsize=size)
         stats = 'no planning calls'
-    protocol = ('Demo: 9.5 s allowance, <=2,000 simulations' if case['default'] else
-                'Experiment: 2,000 simulations, relaxed deadline')
-    ax.set_title(f"Planning time: {stats}\n{protocol}", fontsize=size+.3, loc='left', pad=5)
+    if compact:
+        protocol = ('Demo: 9.5 s; \u22642,000 sims' if case['default'] else
+                    'Experiment: 2,000 sims; relaxed cap')
+        heading = f'{stats}\n{protocol}'
+    else:
+        protocol = ('Demo: 9.5 s allowance, <=2,000 simulations' if case['default'] else
+                    'Experiment: 2,000 simulations, relaxed deadline')
+        heading = f'Planning time: {stats}\n{protocol}'
+    ax.set_title(heading, fontsize=size+.3, loc='left', pad=5)
     ax.set_xlabel('Executed step', fontsize=size, labelpad=1)
     ax.set_ylabel('Search time (s)', fontsize=size, labelpad=1)
     ax.xaxis.set_major_locator(MaxNLocator(6, integer=True))
@@ -211,7 +222,7 @@ def legend(fig, y, compact=False):
         items.append(Line2D([0], [0], color=colour, marker=marker, linestyle='',
                             markersize=5, label=label))
     fig.legend(handles=items, loc='upper center', bbox_to_anchor=(.5, y),
-               ncol=8, frameon=False, fontsize=5.8 if compact else 8,
+               ncol=4 if compact else 8, frameon=False, fontsize=9 if compact else 8,
                handlelength=1.2, columnspacing=.9, handletextpad=.35)
 
 
@@ -254,11 +265,11 @@ def main():
                 png=str(png.relative_to(ROOT))))
     lookup = {c['entry']['name']: c for c in cases}
     for number, (heading, names) in enumerate(SHEETS, 1):
-        fig = plt.figure(figsize=(7.2, 8.3))
-        gs = fig.add_gridspec(4, 2, left=.065, right=.985, bottom=.045,
-                              top=.91, hspace=.72, wspace=.34)
-        fig.suptitle(heading+' (seed 0)', y=.995, fontsize=10)
-        legend(fig, .968, compact=True)
+        fig = plt.figure(figsize=(7.2, 8.1))
+        gs = fig.add_gridspec(3, 2, left=.07, right=.985, bottom=.06,
+                              top=.84, hspace=.65, wspace=.38)
+        fig.suptitle(heading+' (seed 0)', y=.995, fontsize=12)
+        legend(fig, .96, compact=True)
         for row, name in enumerate(names):
             case = lookup[name]
             ax, is_3d = spatial_axis(fig, gs[row, 0], case)
@@ -274,7 +285,7 @@ def main():
                  sheets=[dict(title=title, names=names) for title, names in SHEETS],
                  cases=catalog)
     (OUT/'index.json').write_text(json.dumps(index, indent=2)+'\n')
-    print(f'{gallery}: {len(catalog)} cases; 3 report sheets; no new simulations.')
+    print(f'{gallery}: {len(catalog)} cases; {len(SHEETS)} report sheets; no new simulations.')
 
 
 if __name__ == '__main__':
