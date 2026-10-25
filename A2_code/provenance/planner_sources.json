@@ -1,0 +1,61 @@
+{
+  "purpose": "Exact planner sources for every hash in the submitted experiment metadata. Historical snapshots are not imported by the current entry point.",
+  "recovery": "Historical bytes were recovered from Git, local source snapshots, and recorded edits, then verified against the original experiment SHA-256 values.",
+  "sources": [
+    {
+      "sha256": "1047d92e57f5b0efddc2fd99f7e64f14afed4852f8d3473e742442f5cad676a8",
+      "path": "planner.py",
+      "used_by": [
+        "results/baseline.meta.json",
+        "results/budget.meta.json",
+        "results/components.meta.json",
+        "results/control.meta.json",
+        "results/factorial.meta.json",
+        "results/random.meta.json",
+        "results/regression.meta.json",
+        "results/supplement.meta.json"
+      ]
+    },
+    {
+      "sha256": "165163b9a6b4852db5c27234b44d131c873741cb89edaa9439f239e5d1e31889",
+      "path": "provenance/planners/planner_dev_round3.py",
+      "used_by": [
+        "results/dev/tuning_r3.meta.json"
+      ]
+    },
+    {
+      "sha256": "5c9c193bd204e3ec9de6b186e77b4e7ba8b4bd71ae3b6dfbb0e5de3e5d5a48f6",
+      "path": "provenance/planners/planner_dijkstra_corrected.py",
+      "used_by": [
+        "results/guidance_dijkstra/baseline.meta.json",
+        "results/guidance_dijkstra/supplement.meta.json"
+      ]
+    },
+    {
+      "sha256": "9a2f0228ad314d32aef47a312c89e6913f58e7486a0088d528a039f4effa89d2",
+      "path": "provenance/planners/planner_dev_round1.py",
+      "used_by": [
+        "results/dev/tuning_r1.meta.json"
+      ]
+    },
+    {
+      "sha256": "a55df1057bbf5c36dee40ca66310506656aa45fb0fa31d381b85834f0a4379dc",
+      "path": "provenance/planners/planner_dijkstra_original.py",
+      "used_by": [
+        "results/guidance_dijkstra/budget.meta.json",
+        "results/guidance_dijkstra/components.meta.json",
+        "results/guidance_dijkstra/control.meta.json",
+        "results/guidance_dijkstra/factorial.meta.json",
+        "results/guidance_dijkstra/random.meta.json",
+        "results/guidance_dijkstra/regression.meta.json"
+      ]
+    },
+    {
+      "sha256": "d37673c494066528e8531ad184f4086976698709f61a1e7822be6a18a825599f",
+      "path": "provenance/planners/planner_dev_round2.py",
+      "used_by": [
+        "results/dev/tuning_r2.meta.json"
+      ]
+    }
+  ]
+}

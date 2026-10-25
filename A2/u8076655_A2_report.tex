@@ -163,20 +163,20 @@
 \end{titlepage}
 \pagenumbering{arabic}
 
-% Replace every placeholder before submission. Prompts must be recorded verbatim.
+% -----------------------------------------------------------------------------
+% AI disclosure (same position and style as A1)
+% -----------------------------------------------------------------------------
 \section*{Generative AI Disclosure}
 \label{sec:ai-disclosure}
-OpenAI Codex was used to prepare the report template, review and revise
-the Part A answers, implement the first Part B solver and tests, design and run
-the first experiments, and draft report text, pseudocode and figures.
-Anthropic Claude Code (Claude Opus 5.5) was then used to review the Part B
-code and experiments, implement the revised solver (risk-aware guidance and
-admissible exploration), redesign and rerun the Part B experiments, analyse
-the measured results, and revise the Part B text, tables and figures. The
-supplied simulator's transition and reward methods were preserved; their use
-and the headless import changes are documented in Part B. Original-language
-prompts from all these interactions, including supplied draft answers, are
-recorded verbatim in \texttt{AI\_prompts.txt} in the submitted source archive.
+
+Two generative-AI tools were used. OpenAI Codex was used to prepare the
+report template, review and revise Parts A and B, implement the initial
+Part B solver and tests, design and run experiments, and prepare pseudocode
+and figures. Claude (Anthropic, accessed via Claude Code) was used to review
+and revise the solver, redesign and rerun experiments, analyse the results,
+and revise the report, tables and figures. All prompts are reproduced
+verbatim in their original language in \texttt{AI\_prompts.txt}, included
+in the submitted source archive.
 
 % =============================================================================
 % Part A: 30 points

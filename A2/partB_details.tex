@@ -83,7 +83,9 @@ largest-mean-$Q$ choice raised $L$ under both guidances
 ($\val{TuneDijkstraMaxq}$ and $\val{TuneViMaxq}$). The round-3 Dijkstra arm
 reproduces the round-2 selected setting exactly.
 Development tables retain the planner hashes recorded for those versions;
-all evaluation suites were rerun with the final implementation.
+all main evaluation suites were rerun with the final implementation.
+Exact sources for every recorded planner hash are indexed in
+\texttt{provenance/planner\_sources.json}.
 
 \begin{table}[H]
 \centering\small
@@ -274,6 +276,8 @@ the balanced S1--S3 seed-block $t$ intervals. Removing search changes
 multi-drone success by $\val{BaseMultiDP}$\,pp $\val{BaseMultiDPci}$.
 Both the multi-drone success and completion-length intervals favour the
 base policy on these fixed layouts, without establishing a general ordering.
+These comparisons exclude 100 zero-step episodes (already at the goals
+or rejected as statically infeasible) from the 520 baseline pairs.
 
 An exhaustive small-model check separately verifies 704 state-action
 pairs and 6,048 positive-probability outcomes on all 11 admissible
@@ -284,15 +288,16 @@ semantics on that finite example, not performance on arbitrary maps.
 \subsection{Value-iteration versus Dijkstra guidance}
 \label{app:guidance-compare}
 S1, S2, S4, S5 and the regression/supplementary suites compare the earlier
-Dijkstra guidance (A) and submitted value guidance (B) on the same scenarios
-and seeds; pairs match
+Dijkstra guidance and distance-based leaf estimate (A) with submitted
+VI guidance and leaf values (B) on the same scenarios and seeds; pairs match
 scenario, variant, simulation cap and seed. S3 is omitted here because
 removing risk terms has different meanings under A and B. The A runs are archived in
-\texttt{results/guidance\_dijkstra/}. Over all solver suites, B succeeds in
+\texttt{results/guidance\_dijkstra/}. Across the full-solver suites, B succeeds in
 $\val{GuideB}$ of $\val{GuidePairs}$ distinct paired episodes and A in
 $\val{GuideA}$: B rescues $\val{GuideWins}$ and loses $\val{GuideLosses}$.
 The success change is $\val{GuideDP}$\,pp $\val{GuideDPci}$; penalised length
 changes by $\val{GuideDL}$ $\val{GuideDLci}$ steps. The aggregate excludes
+the separate 520-pair search-free baseline row and
 $\val{GuideDuplicates}$ repeated conditions shared by the budget and other
 suites. Intervals use 20,000 execution-seed cluster bootstrap resamples,
 rather than treating all episode differences as independent. Value guidance
@@ -304,10 +309,12 @@ success-change interval includes zero.
 \begin{table}[H]
 \centering\small
 \setlength{\tabcolsep}{3pt}
-\caption{Paired comparison of guidance B (value iteration, submitted) with A
-(Dijkstra). Rescues/Losses: pairs that only B / only A completes; $\Delta L$:
+\caption{Paired comparison of guidance and leaf values B (VI, submitted)
+with A (Dijkstra and a distance-based leaf estimate).
+Rescues/Losses: pairs that only B / only A completes; $\Delta L$:
 B minus A with a 95\% seed-cluster bootstrap interval.
-The aggregate counts repeated conditions once.}
+The full-solver aggregate excludes the search-free baseline row and counts
+repeated conditions once.}
 \begin{tabular*}{\linewidth}{@{\extracolsep{\fill}}lrrrrrl@{}}
 \toprule Suite & Pairs & A & B & Rescues & Losses & $\Delta L$ (95\% CI) \\
 \midrule

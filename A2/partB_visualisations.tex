@@ -1,42 +1,43 @@
 \section{Example trajectories and planning times}
 \label{app:visualisations}
-Stored seed-0 full-solver traces illustrate scenario types, including a
-collision; they do not replace B4's repeated-run statistics. Squares mark
-starts, stars goals, and crosses unfinished drones' returned positions.
-Collision targets are not logged. Each row identifies either the demo's
-9.5\,s allowance or a fixed-simulation experiment with a relaxed
-deadline. The complete gallery covers all 76 evaluation configurations
-and the supplied example, excluding development layouts.
+Figure~\ref{fig:scenario-examples} spans four pages and shows stored
+seed-0 full-solver traces, including a collision; these examples do not
+replace B4's repeated-run statistics. Squares mark starts, stars goals,
+and crosses unfinished drones' returned positions. Collision targets are
+not logged. Each row identifies either the demo's 9.5\,s allowance or a
+fixed-simulation experiment with a relaxed deadline. The wall-gap and
+corridor layouts have seven and eight obstacles, beyond the demo's
+five-obstacle range. The complete gallery covers all 76 evaluation
+configurations and the supplied example, excluding development layouts.
 
 \begin{figure}[H]
 \centering
 \includegraphics[width=\linewidth]{figures/scenario_examples_1.pdf}
-\caption{Default-budget demonstrations: open navigation, the supplied
-two-drone example and strong wind.}
+\caption{Representative trajectories (left) and per-step planning times
+(right) for twelve scenarios.}
+\label{fig:scenario-examples}
 \end{figure}
 
 \clearpage
 \begin{figure}[H]
+\ContinuedFloat
 \centering
 \includegraphics[width=\linewidth]{figures/scenario_examples_2.pdf}
-\caption{Four-drone 3D flight under the demo budget, followed by
-fixed-simulation examples of an altitude detour and three drones in 3D.}
+\caption[]{\textit{Continued.}}
 \end{figure}
 
 \clearpage
 \begin{figure}[H]
+\ContinuedFloat
 \centering
 \includegraphics[width=\linewidth]{figures/scenario_examples_3.pdf}
-\caption{Fixed-simulation examples: clutter, a wall gap and an occupied
-goal. The wall-gap layout has seven obstacles; these timings are not demo
-deadline measurements.}
+\caption[]{\textit{Continued.}}
 \end{figure}
 
 \clearpage
 \begin{figure}[H]
+\ContinuedFloat
 \centering
 \includegraphics[width=\linewidth]{figures/scenario_examples_4.pdf}
-\caption{Fixed-simulation examples: separate altitude layers, a shared
-corridor and a collision in the narrow passage. The corridor has eight obstacles; these timings
-are not demo deadline measurements.}
+\caption[]{\textit{Continued.}}
 \end{figure}

@@ -49,7 +49,7 @@ def main():
         result=subprocess.run([sys.executable,'-m','unittest','discover','-s','tests','-v'],
                               cwd=root,env=env,capture_output=True,text=True,check=True)
         checks['isolated_unit_tests']=result.stderr.strip().splitlines()[-1]
-        for script in ['verify_upstream.py','analyse_results.py','finish_report.py']:
+        for script in ['verify_upstream.py','verify_sources.py','analyse_results.py','finish_report.py']:
             subprocess.run([sys.executable,str(root/'scripts'/script)],cwd=root,env=env,
                            stdout=subprocess.PIPE,stderr=subprocess.PIPE,text=True,check=True)
         checks['isolated_analysis_and_report_inputs']=True

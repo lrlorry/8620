@@ -519,7 +519,7 @@ def analyse_guidance(suites,numbers,summary):
     losses=sum(a['success'] and not b['success'] for a,b in pooled)
     delta=seed_cluster_effect(pooled,'penalized_steps')
     success_delta=seed_cluster_effect(pooled,'success')
-    table.append(['Combined (unique)',len(pooled),sum(a['success'] for a,_ in pooled),sum(b['success'] for _,b in pooled),
+    table.append(['Full solver, unique',len(pooled),sum(a['success'] for a,_ in pooled),sum(b['success'] for _,b in pooled),
                   wins,losses,ci(delta,digits=2)])
     latex_rows('guidance_rows',table)
     numbers['GuidePairs']=f'{len(pooled):,}';numbers['GuideA']=sum(a['success'] for a,_ in pooled)

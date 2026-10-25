@@ -106,7 +106,8 @@ sampling among the four cheapest commands within $1.05$ of the minimum
 with weights $e^{-3(\mathrm{score}-\min)}$.
 \textsc{Explore} samples uniformly from free, in-grid, unreserved targets
 when available. An earlier guidance (A) replaced $-Q_{i,h}/\eta$
-by risk-weighted Dijkstra costs; development round~3 adopted value
+by risk-weighted Dijkstra target costs plus a clearance tie-breaker
+$0.3/\max\{1,d(q)\}$; development round~3 adopted value
 guidance, and Appendix~\ref{app:guidance-compare} compares both on
 S1, S2, S4, S5 and the additional validation suites.
 
@@ -219,7 +220,10 @@ simulator's unchanged dynamics, with independent planning and
 execution RNGs. The planner uses \texttt{get\_config()},
 \texttt{simulate()} and \texttt{num\_actions}. AST checks compare the
 core simulator methods against supplied revision \texttt{ea3cbfe}
-(\texttt{UPSTREAM.json}). From the extracted archive's top-level folder:
+(\texttt{UPSTREAM.json}); only plotting imports/hooks were adjusted for
+headless execution. Initialisation, including VI preprocessing, is recorded
+as \texttt{setup\_seconds}, separately from per-step planning times.
+From the extracted archive's top-level folder:
 
 \textbf{Reproduction commands.}
 \begin{lstlisting}[style=terminal,keepspaces=true]
@@ -298,7 +302,8 @@ Check performance beyond the factorial and joint growth of state/action spaces. 
 \end{table}
 
 A further 360 regression, 520 search-free baseline and 280 supplementary
-runs provide additional validation (Appendix~\ref{app:supplement});
+runs (140 full solver, 140 search-free) provide additional validation
+(Appendix~\ref{app:supplement});
 the complete evaluation contains \val{TotalEpisodes} episodes.
 
 \textbf{Metrics.} With $F$ free cells, there are up to $F^N$ positional
@@ -402,6 +407,14 @@ More search changes the tree without a demonstrated completion benefit
 here; overlapping intervals do not establish budget equivalence.
 Appendix~\ref{app:budget} also reports admitted root actions and
 new-node depth, distinguishing tree growth from task performance.
+
+\textbf{Dijkstra versus value guidance.}
+Replacing both Dijkstra guidance and its distance-based leaf estimate
+with VI gives $\val{GuideB}/\val{GuidePairs}$ successes versus
+$\val{GuideA}/\val{GuidePairs}$, with paired
+$\Delta L=\val{GuideDL}$ $\val{GuideDLci}$ steps.
+The success-change interval includes zero; this comparison does not
+isolate guidance from leaf estimation (Appendix~\ref{app:guidance-compare}).
 
 \input{partB_random.tex}
 \subsubsection*{Limitations}

@@ -178,8 +178,12 @@ behaviour rather than replace the repeated-run statistics.
 The reported design has 3,460 episodes (360 regression, 160 generated,
 540 factorial, 1,040 component, 400 budget, 160 control, 520 search-free
 baseline, 280 supplementary) plus 2,880 development-set episodes in three rounds.
-Every reported suite ran with the submitted planner (hash in each `*.meta.json`);
-`scripts/verify_equivalence.py` replays the reported seed-0 episodes with the
+All 3,460 main evaluation episodes ran with the submitted planner (hash in each `*.meta.json`).
+The earlier Dijkstra and development runs retain their recorded versions;
+`provenance/planner_sources.json` maps all six planner hashes to exact source
+files, including five historical snapshots in `provenance/planners/`.
+Run `python scripts/verify_sources.py` to check this mapping.
+`scripts/verify_equivalence.py` replays the main evaluation's stored seed-0 episodes with the
 current code. Raw outcomes, seeds, search diagnostics and
 provenance (`*.meta.json`, planner hash) are in `results/`; seed-0
 trajectories are in `results/trajectories/`. `summary.csv` gives means with

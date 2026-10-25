@@ -1366,3 +1366,83 @@ Tool: OpenAI Codex
 Purpose: Remove compilation/runtime intermediates and push the reviewed assignment files to GitHub.
 Prompt (verbatim):
 清空中间文件 推送到github
+
+
+Tool: OpenAI Codex
+Purpose: Review the current report and algorithm against the assignment requirements.
+Prompt (verbatim):
+作为顶尖大学教授 和智能机器人领军人 审核一下这个报告 和算法
+
+
+Tool: OpenAI Codex
+Purpose: Explain the comparison between previous heuristic guidance and value iteration, and identify remaining improvements.
+Prompt (verbatim):
+啥意思 相比之前的启发式的效果怎么样 哪里还需要继续改
+
+
+Tool: OpenAI Codex
+Purpose: Check report redundancy, numerical consistency and the comparison of Dijkstra and value-iteration guidance.
+Prompt (verbatim):
+报告上 有没有冗余。以及数字不匹配的地方 有没有对比之前启发式和VI的
+
+
+Tool: OpenAI Codex
+Purpose: Locate and check the disclosure statement about headless import changes.
+Prompt (verbatim):
+Generative AI Disclosure  e headless import changes are documented in
+Part B. 在哪里啊 没看到
+
+
+Tool: OpenAI Codex
+Purpose: Match the A2 generative-AI disclosure wording and placement to the A1 report.
+Prompt (verbatim):
+Generative AI Disclosure 你参考A1 的声明和位置可以吗
+
+
+Tool: OpenAI Codex
+Purpose: Locate the original-language AI prompt log in the submission.
+Prompt (verbatim):
+提示词记录 在哪里
+
+
+Tool: OpenAI Codex
+Purpose: Check the assignment submission requirements against the original brief.
+Prompt (verbatim):
+作业要提交什么 要求
+
+
+Tool: OpenAI Codex
+Purpose: Verify that the submission archive matches the latest local files.
+Prompt (verbatim):
+code.zip 是最新的吗
+
+
+Tool: OpenAI Codex
+Purpose: Combine the descriptions for the four representative scenario sheets into one shared figure caption.
+Prompt (verbatim):
+Figure 5 - 8 的描述 感觉 你没必要分开吧 统一一个是不是更好不行了吗
+
+Tool: Anthropic Claude Code (Claude Opus 5.5)
+Purpose: Ask whether the report was updated for the value-guided solver.
+Prompt (verbatim):
+你报告也改了吗
+
+Tool: Anthropic Claude Code (Claude Opus 5.5)
+Purpose: Ask why some regression scenarios have zero successes (a screenshot of the regression table was attached).
+Prompt (verbatim):
+[screenshot of the regression table] 怎么有几个场景success是0 啊 之前也是这样吗
+
+Tool: Anthropic Claude Code (Claude Opus 5.5)
+Purpose: Ask which guidance (heuristic or value iteration) the demo runs.
+Prompt (verbatim):
+现在的实验室 启发式和vi都有是吧 实际演示我跑的是哪一种
+
+Tool: Anthropic Claude Code (Claude Opus 5.5)
+Purpose: Ask for clarification of the A/B naming.
+Prompt (verbatim):
+啥意思 怎么一会儿A 一会儿B
+
+Tool: Anthropic Claude Code (Claude Opus 5.5)
+Purpose: Commit and push the value-guided solver, rerun results and updated report.
+Prompt (verbatim):
+那你推送吧
