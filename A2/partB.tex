@@ -225,17 +225,12 @@ headless execution. Initialisation, including VI preprocessing, is recorded
 as \texttt{setup\_seconds}, separately from per-step planning times.
 From the extracted archive's top-level folder:
 
-\textbf{Reproduction commands.}
+\textbf{Reproduction commands.} Other optional flags are listed in \texttt{README.md}.
 \begin{lstlisting}[style=terminal,keepspaces=true]
 python -m pip install -r requirements.txt
 python run_u8076655.py --config <scenario.yaml>
 
-# Optional flags; full descriptions are in README.md.
-python run_u8076655.py --config <scenario.yaml> \
-  [--planning-time SECONDS] [--max-simulations K] [--seed SEED] \
-  [--visualize] [--quiet] [--output TRACE.json]
-
-# Example with the optional Vedo viewer.
+# Optional Vedo viewer:
 python run_u8076655.py --config environments/demo_four_3d.yaml --visualize
 \end{lstlisting}
 \noindent\begin{minipage}{\linewidth}

@@ -1,0 +1,205 @@
+{
+  "reviewed_at": "2026-10-25T22:10:49.408458+11:00",
+  "scope": "Local a2.pdf and the supplied MultiDroneUnc README; current report, source tree and recorded experiments.",
+  "solver_behavior_changed": false,
+  "data_audit": {
+    "evaluation_episodes": 3460,
+    "checked_summary_conditions": 193,
+    "planner_sha256": "1047d92e57f5b0efddc2fd99f7e64f14afed4852f8d3473e742442f5cad676a8",
+    "suites": {
+      "regression": {
+        "episodes": 360,
+        "conditions": 18,
+        "all_keys_match_experiment_design": true,
+        "all_simulation_caps_completed": true
+      },
+      "random": {
+        "episodes": 160,
+        "conditions": 16,
+        "all_keys_match_experiment_design": true,
+        "all_simulation_caps_completed": true
+      },
+      "factorial": {
+        "episodes": 540,
+        "conditions": 27,
+        "all_keys_match_experiment_design": true,
+        "all_simulation_caps_completed": true
+      },
+      "components": {
+        "episodes": 1040,
+        "conditions": 56,
+        "all_keys_match_experiment_design": true,
+        "all_simulation_caps_completed": true
+      },
+      "budget": {
+        "episodes": 400,
+        "conditions": 20,
+        "all_keys_match_experiment_design": true,
+        "all_simulation_caps_completed": true
+      },
+      "control": {
+        "episodes": 160,
+        "conditions": 8,
+        "all_keys_match_experiment_design": true,
+        "all_simulation_caps_completed": true
+      },
+      "baseline": {
+        "episodes": 520,
+        "conditions": 34,
+        "all_keys_match_experiment_design": true,
+        "all_simulation_caps_completed": true
+      },
+      "supplement": {
+        "episodes": 280,
+        "conditions": 14,
+        "all_keys_match_experiment_design": true,
+        "all_simulation_caps_completed": true
+      }
+    },
+    "all_generated_numeric_macros_and_tables_match_raw_results": true,
+    "guidance": {
+      "pairs": 1680,
+      "duplicate_pairs_removed": 80,
+      "wins": 44,
+      "losses": 43,
+      "delta": {
+        "mean": -0.8160714285714286,
+        "lower": -1.3797691197691198,
+        "upper": -0.277767857142858,
+        "n": 1680,
+        "seed_blocks": 20,
+        "resamples": 20000,
+        "method": "percentile bootstrap of execution-seed clusters"
+      },
+      "success_delta": {
+        "mean": 0.05952380952380952,
+        "lower": -0.8928571428571429,
+        "upper": 1.0613207547169812,
+        "n": 1680,
+        "seed_blocks": 20,
+        "resamples": 20000,
+        "method": "percentile bootstrap of execution-seed clusters"
+      }
+    }
+  },
+  "requirements": [
+    {
+      "requirement": "One PDF and one source/test archive with a single top-level folder",
+      "status": "verified",
+      "evidence": [
+        "A2/u8076655_A2_report.pdf",
+        "A2/u8076655_A2_code.zip"
+      ]
+    },
+    {
+      "requirement": "Python entry point run_UID.py --config <environment_yaml_file>",
+      "status": "verified",
+      "evidence": [
+        "run_u8076655.py",
+        "README.md"
+      ]
+    },
+    {
+      "requirement": "Include all source codes and test cases used in the report",
+      "status": "verified_after_fix",
+      "evidence": [
+        "environments/manifest.json",
+        "provenance/planner_sources.json"
+      ],
+      "fix": "Archived five historical planner sources; all six version hashes match the 19 experiment metadata files."
+    },
+    {
+      "requirement": "Disclose generative AI and provide the prompts used",
+      "status": "disclosure_and_matching_prompt_logs_present",
+      "evidence": [
+        "A2/u8076655_A2_report.tex",
+        "AI_prompts.txt"
+      ]
+    },
+    {
+      "requirement": "Part A: abstraction, alpha-vector intervals/dominance, MDP/POMDP scenarios",
+      "status": "reviewed",
+      "evidence": [
+        "A2/u8076655_A2_report.tex"
+      ]
+    },
+    {
+      "requirement": "B1: MDP formulation with known stochastic transitions",
+      "status": "reviewed",
+      "evidence": [
+        "A2/partB.tex",
+        "A2/partB_details.tex"
+      ]
+    },
+    {
+      "requirement": "B2: specific approximate online solver, pseudocode and four MCTS components",
+      "status": "reviewed_against_implementation",
+      "evidence": [
+        "A2/partB.tex",
+        "planner.py"
+      ]
+    },
+    {
+      "requirement": "B3: implement B2 with the supplied primitives; serial planning, up to 10 seconds per step",
+      "status": "local_checks_pass_hidden_scenarios_unverified",
+      "evidence": [
+        "planner.py",
+        "run_u8076655.py",
+        "results/model_verification.json",
+        "results/release_validation.json"
+      ],
+      "note": "Initialisation is timed separately; existing default demos also stay below 10 seconds when setup is added to the first decision. These local measurements are not a hard real-time guarantee on other hardware."
+    },
+    {
+      "requirement": "B4: systematic state/action/clutter experiments, expectations, repeated runs, means and 95% CIs, component effects as complexity grows",
+      "status": "required_elements_present_with_stated_scope_limits",
+      "evidence": [
+        "A2/partB.tex",
+        "A2/partB_components.tex",
+        "A2/partB_details.tex",
+        "results/summary.json"
+      ],
+      "note": "State padding, changing control authority and one layout per generated (N, alpha) pair limit generalisation; the report states these limitations."
+    },
+    {
+      "requirement": "Canvas upload before the deadline; attend demo and oral Q&A",
+      "status": "requires_user_submission_and_attendance",
+      "evidence": [
+        "A2/a2.pdf"
+      ]
+    }
+  ],
+  "unit_tests": 45,
+  "independent_wilson_ci_checks": 193,
+  "source_versions": 6,
+  "statistical_plot_pngs_regenerated_and_identical": [
+    "complexity_effects.png",
+    "component_effects.png",
+    "budget_curve.png"
+  ],
+  "gallery_source_and_configuration_hashes_verified": 77,
+  "existing_default_demo_setup_plus_first_decision_seconds": {
+    "demo_open_2d": 7.427639001049101,
+    "example_config": 7.5080512129934505,
+    "strong_wind": 6.145468706032261,
+    "demo_four_3d": 9.391913651954383
+  },
+  "report_pdf_sha256": "7e44b94ba40ec42b6bbe839a4a193781a8ec9159678212214c8ada6bf0221556",
+  "report_pages": 26,
+  "latex_unresolved_references": false,
+  "latex_overfull_boxes": false,
+  "report_fixes": [
+    "Explicitly excluded the 520 no-search pairs and 80 duplicate full-solver pairs from the 1680 aggregate.",
+    "Clarified 280 supplementary episodes as 140 full solver plus 140 no-search.",
+    "Clarified baseline comparisons exclude 100 zero-step episodes.",
+    "Explained that the Dijkstra/VI comparison changes both guidance and leaf estimation; added the result to Q4.",
+    "Documented the Dijkstra clearance tie-breaker and separate initialisation timing.",
+    "Removed a repeated budget limitation paragraph and compacted reproduction commands."
+  ],
+  "remaining_scientific_limits": [
+    "No consistent MCTS completion benefit across the tested suites.",
+    "VI improves pooled penalised completion length but success improvement over Dijkstra is unresolved.",
+    "The complexity-factor ranking is specific to the tested levels and layouts.",
+    "Hidden-case demo performance and timing on lab hardware remain unverified."
+  ]
+}

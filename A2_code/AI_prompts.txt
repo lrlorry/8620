@@ -1446,3 +1446,39 @@ Tool: Anthropic Claude Code (Claude Opus 5.5)
 Purpose: Commit and push the value-guided solver, rerun results and updated report.
 Prompt (verbatim):
 那你推送吧
+
+
+Tool: OpenAI Codex
+Purpose: Explain how to run the submitted program with teacher-provided YAML scenarios during the demo.
+Prompt (verbatim):
+我演示的时候 命令是啥  场景是助教给什么文件吗
+
+
+Tool: OpenAI Codex
+Purpose: Check that the submission archive includes YAML scenarios and verify an extracted quick run.
+Prompt (verbatim):
+我代码里有这样的yaml吗 我本地试试下载代码运行
+
+
+Tool: OpenAI Codex
+Purpose: Check the required top-level folder and entry-point naming.
+Prompt (verbatim):
+文件夹的命名有没有要求
+
+
+Tool: OpenAI Codex
+Purpose: Audit every assignment requirement, source provenance and agreement between raw results and the report; correct confirmed issues.
+Prompt (verbatim):
+逐字核对老师的要求 有没有不符合的 还有实验结果和报告描述对不上的
+
+
+Tool: OpenAI Codex
+Purpose: Confirm which solver and guidance the default demo actually uses.
+Prompt (verbatim):
+现在是启发式 还是VI 实际demo跑的
+
+
+Tool: OpenAI Codex
+Purpose: Synchronise the latest prompt records and submission archive, then commit and push the latest assignment files to GitHub.
+Prompt (verbatim):
+最新的 推送到github吧
